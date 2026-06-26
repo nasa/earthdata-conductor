@@ -2,20 +2,20 @@ import TerraDataAccess from "@nasa-terra/components/dist/react/data-access/index
 import { useToolInfo } from "../helpers.js";
 import TerraProvider from "./components/TerraProvider.js";
 import "@/index.css";
-import { useViewState } from "skybridge/web";
 import { useEffect } from "react";
+import { useViewState } from "skybridge/web";
 
 export default function BrowseData() {
-  const toolInfo = useToolInfo();
-  const [state, setState] = useViewState()
+  const toolInfo = useToolInfo<"browse-data">();
+  const [state, setState] = useViewState();
 
-  console.log(state, setState)
+  console.log(state, setState);
 
   useEffect(() => {
     setState({
-      foo: 'bar'
-    })
-  }, [])
+      foo: "bar",
+    });
+  }, []);
 
   return (
     <TerraProvider>
