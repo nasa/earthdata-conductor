@@ -312,6 +312,19 @@ const server = new McpServer(
     },
   );
 
+// Middleware to correct buggy Earthdata Login redirect URL containing double question marks.
+server.express.use((req: Request, res: Response, next: NextFunction) => {
+  if (req.url.includes("?oauth_callback=true?code=")) {
+    const correctedUrl = req.url.replace(
+      "?oauth_callback=true?code=",
+      "?oauth_callback=true&code=",
+    );
+    res.redirect(correctedUrl);
+    return;
+  }
+  next();
+});
+
 // Proxy route for Earthdata Login OAuth token exchange to bypass CORS and append client_secret.
 server.express.use(
   "/oauth/token",
