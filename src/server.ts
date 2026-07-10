@@ -1,6 +1,18 @@
+import "dotenv/config";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-import { McpServer } from "skybridge/server";
+import express, {
+  type NextFunction,
+  type Request,
+  type Response,
+} from "express";
+import {
+  McpServer,
+  mcpAuthMetadataRouter,
+  optionalBearerAuth,
+} from "skybridge/server";
+import { z } from "zod";
+import { type EarthdataAuthInfo, verifyAccessToken } from "./auth.js";
 import csp from "./csp.js";
 import { BrowseDataInputSchema } from "./schemas/browse-data.schema.js";
 import { SearchCollectionsInputSchema } from "./schemas/search-collections.schema.js";
@@ -12,11 +24,27 @@ const server = new McpServer(
   },
   { capabilities: {} },
 )
+  .use(
+    mcpAuthMetadataRouter({
+      oauthMetadata: {
+        issuer: process.env.SERVER_URL || "http://localhost:3000",
+        authorization_endpoint: `${process.env.EARTHDATA_SERVER_URL || "https://uat.urs.earthdata.nasa.gov"}/oauth/authorize`,
+        token_endpoint: `${process.env.SERVER_URL || "http://localhost:3000"}/oauth/token`,
+        registration_endpoint: `${process.env.SERVER_URL || "http://localhost:3000"}/oauth/register`,
+        response_types_supported: ["code"],
+      },
+      resourceServerUrl: new URL(
+        `${process.env.SERVER_URL || "http://localhost:3000"}/mcp`,
+      ),
+    }),
+  )
+  .use("/mcp", optionalBearerAuth({ verifier: { verifyAccessToken } }))
   .registerTool(
     {
       name: "browse-data",
       description: "Browse data files directly from the archive.",
       inputSchema: BrowseDataInputSchema.shape,
+      securitySchemes: [{ type: "noauth" }, { type: "oauth2" }],
       annotations: {
         title: "Start browsing data",
         readOnlyHint: true,
@@ -54,6 +82,7 @@ const server = new McpServer(
       description:
         "Search NASA Earthdata collections by keyword, spatial area, and date range.",
       inputSchema: SearchCollectionsInputSchema.shape,
+      securitySchemes: [{ type: "noauth" }, { type: "oauth2" }],
       annotations: {
         title: "Search Earthdata collections",
         readOnlyHint: true,
@@ -240,7 +269,173 @@ const server = new McpServer(
         isError: false,
       };
     },
+  )
+  .registerTool(
+    {
+      name: "create-harmony-job",
+      description:
+        "Create a Harmony subsetting job on behalf of the user to generate a job ID.",
+      inputSchema: z.object({
+        collectionId: z.string(),
+        subsetParams: z.record(z.string(), z.any()),
+      }).shape,
+      securitySchemes: [{ type: "oauth2" }],
+    },
+    async ({ collectionId, subsetParams }, extra) => {
+      const authInfo = extra.authInfo as EarthdataAuthInfo | undefined;
+      if (!authInfo) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: "Sign in is required to perform subsetting.",
+            },
+          ],
+          isError: true,
+        };
+      }
+      return {
+        structuredContent: {
+          jobId: "harmony-job-mock-id-1234",
+          user: authInfo.extra.uid,
+          collectionId,
+          subsetParams,
+        },
+        content: [
+          {
+            type: "text",
+            text: `Harmony subsetting job created successfully for collection ${collectionId} (user: ${authInfo.extra.uid}).`,
+          },
+        ],
+        isError: false,
+      };
+    },
   );
+
+// Middleware to correct buggy Earthdata Login redirect URL containing double question marks.
+server.express.use((req: Request, res: Response, next: NextFunction) => {
+  if (req.url.includes("?oauth_callback=true?code=")) {
+    const correctedUrl = req.url.replace(
+      "?oauth_callback=true?code=",
+      "?oauth_callback=true&code=",
+    );
+    res.redirect(correctedUrl);
+    return;
+  }
+  next();
+});
+
+// Proxy route for Earthdata Login OAuth token exchange to bypass CORS and append client_secret.
+server.express.use(
+  "/oauth/token",
+  express.urlencoded({ extended: true }),
+  (req: Request, res: Response, next: NextFunction) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Authorization",
+    );
+    if (req.method === "OPTIONS") {
+      res.sendStatus(200);
+      return;
+    }
+    next();
+  },
+);
+
+server.express.post("/oauth/token", async (req: Request, res: Response) => {
+  const { grant_type, code, redirect_uri } = req.body;
+  const serverUrl =
+    process.env.EARTHDATA_SERVER_URL || "https://uat.urs.earthdata.nasa.gov";
+  const clientId = process.env.EARTHDATA_CLIENT_ID;
+  const clientSecret = process.env.EARTHDATA_CLIENT_SECRET;
+
+  if (!clientId || !clientSecret) {
+    res.status(500).json({
+      error: "server_error",
+      error_description: "Client credentials not configured.",
+    });
+    return;
+  }
+
+  const authHeader = Buffer.from(`${clientId}:${clientSecret}`).toString(
+    "base64",
+  );
+
+  try {
+    const response = await fetch(`${serverUrl}/oauth/token`, {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${authHeader}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        grant_type,
+        code,
+        redirect_uri,
+      }),
+    });
+
+    const data = await response.json();
+    res.status(response.status).json(data);
+  } catch (err) {
+    res.status(500).json({
+      error: "server_error",
+      error_description: err instanceof Error ? err.message : String(err),
+    });
+  }
+});
+
+// Proxy route for Earthdata Login OAuth client registration to satisfy MCP client expectations.
+server.express.use(
+  "/oauth/register",
+  express.json(),
+  (req: Request, res: Response, next: NextFunction) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Authorization",
+    );
+    if (req.method === "OPTIONS") {
+      res.sendStatus(200);
+      return;
+    }
+    next();
+  },
+);
+
+server.express.post("/oauth/register", (req: Request, res: Response) => {
+  const clientId = process.env.EARTHDATA_CLIENT_ID;
+  if (!clientId) {
+    res.status(500).json({
+      error: "server_error",
+      error_description: "EARTHDATA_CLIENT_ID is not configured.",
+    });
+    return;
+  }
+
+  const {
+    redirect_uris,
+    token_endpoint_auth_method,
+    grant_types,
+    response_types,
+    client_name,
+    scope,
+  } = req.body;
+
+  res.json({
+    client_id: clientId,
+    client_id_issued_at: Math.floor(Date.now() / 1000),
+    redirect_uris: redirect_uris || ["http://localhost:3000/"],
+    token_endpoint_auth_method: token_endpoint_auth_method || "none",
+    grant_types: grant_types || ["authorization_code"],
+    response_types: response_types || ["code"],
+    client_name: client_name || "Earthdata UI MCP Client",
+    scope: scope || "",
+  });
+});
 
 export default await server.run();
 
