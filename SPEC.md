@@ -56,8 +56,13 @@ A modern, responsive, and interactive set of web views integrated into the AI as
   - [x] Interactive dataset card UI with metadata preview.
   - [x] File browsing view integrating `@nasa-terra/components` data access.
 
+* **User Authentication & Authorization** (Completed):
+  - [x] Earthdata Login OAuth Integration via Skybridge metadata discovery.
+  - [x] Mixed-auth middleware allowing public search and authenticated actions.
+  - [x] Custom token verification against Earthdata Login's token user validation endpoint.
+
 * **Harmony Subsetting Integration** (Planned):
-  - [ ] **Job Creation Tool**: Create a Harmony subsetting job on behalf of the user to generate a job ID.
+  - [ ] **Job Creation Tool**: Create a Harmony subsetting job on behalf of the user to generate a job ID. (Mock skeleton added).
   - [ ] **Harmony Subsetter View**: Load the Harmony subsetter UI component pre-populated with the generated job ID.
 
 * **UI/Component Enhancements** (Planned):
@@ -90,4 +95,8 @@ A modern, responsive, and interactive set of web views integrated into the AI as
 ### Skybridge Framework Upgrade to v1.2.7 (July 2026)
 * **Decision**: Upgraded `skybridge` and `@skybridge/devtools` from `1.1.2`/`1.0.0` to `1.2.7`.
 * **Rationale**: Keep the UI framework up to date with the latest features, enhancements, and bug fixes from Skybridge, while resolving any static analysis/linting issues with type-safety updates.
+
+### NASA Earthdata Login OAuth Integration (July 2026)
+* **Decision**: Configured Skybridge's OAuth metadata router and optional Bearer token middleware with Earthdata Login as the Identity Provider. Added a custom validation handler querying URS's `/oauth/tokens/user` endpoint.
+* **Rationale**: Enables secure user authentication. Mixed-auth routing allows discovery tools (`search-collections`, `browse-data`) to run anonymously while requiring sign-in for transformation and Harmony subsetting actions.
 

@@ -1,6 +1,12 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-import { McpServer } from "skybridge/server";
+import {
+  McpServer,
+  mcpAuthMetadataRouter,
+  optionalBearerAuth,
+} from "skybridge/server";
+import { z } from "zod";
+import { verifyAccessToken } from "./auth.js";
 import csp from "./csp.js";
 import { BrowseDataInputSchema } from "./schemas/browse-data.schema.js";
 import { SearchCollectionsInputSchema } from "./schemas/search-collections.schema.js";
@@ -12,11 +18,28 @@ const server = new McpServer(
   },
   { capabilities: {} },
 )
+  .use(
+    mcpAuthMetadataRouter({
+      oauthMetadata: {
+        issuer:
+          process.env.EARTHDATA_SERVER_URL ||
+          "https://uat.urs.earthdata.nasa.gov",
+        authorization_endpoint: `${process.env.EARTHDATA_SERVER_URL || "https://uat.urs.earthdata.nasa.gov"}/oauth/authorize`,
+        token_endpoint: `${process.env.EARTHDATA_SERVER_URL || "https://uat.urs.earthdata.nasa.gov"}/oauth/token`,
+        response_types_supported: ["code"],
+      },
+      resourceServerUrl: new URL(
+        process.env.SERVER_URL || "http://localhost:3000",
+      ),
+    }),
+  )
+  .use("/mcp", optionalBearerAuth({ verifier: { verifyAccessToken } }))
   .registerTool(
     {
       name: "browse-data",
       description: "Browse data files directly from the archive.",
       inputSchema: BrowseDataInputSchema.shape,
+      securitySchemes: [{ type: "noauth" }, { type: "oauth2" }],
       annotations: {
         title: "Start browsing data",
         readOnlyHint: true,
@@ -54,6 +77,7 @@ const server = new McpServer(
       description:
         "Search NASA Earthdata collections by keyword, spatial area, and date range.",
       inputSchema: SearchCollectionsInputSchema.shape,
+      securitySchemes: [{ type: "noauth" }, { type: "oauth2" }],
       annotations: {
         title: "Search Earthdata collections",
         readOnlyHint: true,
@@ -235,6 +259,46 @@ const server = new McpServer(
           {
             type: "text",
             text: `Found ${collectionsList.length} collections matching '${keyword}'.`,
+          },
+        ],
+        isError: false,
+      };
+    },
+  )
+  .registerTool(
+    {
+      name: "create-harmony-job",
+      description:
+        "Create a Harmony subsetting job on behalf of the user to generate a job ID.",
+      inputSchema: z.object({
+        collectionId: z.string(),
+        subsetParams: z.record(z.any()),
+      }).shape,
+      securitySchemes: [{ type: "oauth2" }],
+    },
+    async ({ collectionId, subsetParams }, extra) => {
+      if (!extra.authInfo) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: "Sign in is required to perform subsetting.",
+            },
+          ],
+          isError: true,
+        };
+      }
+      return {
+        structuredContent: {
+          jobId: "harmony-job-mock-id-1234",
+          user: extra.authInfo.uid,
+          collectionId,
+          subsetParams,
+        },
+        content: [
+          {
+            type: "text",
+            text: `Harmony subsetting job created successfully for collection ${collectionId} (user: ${extra.authInfo.uid}).`,
           },
         ],
         isError: false,
