@@ -22,15 +22,13 @@ const server = new McpServer(
   .use(
     mcpAuthMetadataRouter({
       oauthMetadata: {
-        issuer:
-          process.env.EARTHDATA_SERVER_URL ||
-          "https://uat.urs.earthdata.nasa.gov",
+        issuer: process.env.SERVER_URL || "http://localhost:3000",
         authorization_endpoint: `${process.env.EARTHDATA_SERVER_URL || "https://uat.urs.earthdata.nasa.gov"}/oauth/authorize`,
-        token_endpoint: `${process.env.EARTHDATA_SERVER_URL || "https://uat.urs.earthdata.nasa.gov"}/oauth/token`,
+        token_endpoint: `${process.env.SERVER_URL || "http://localhost:3000"}/oauth/token`,
         response_types_supported: ["code"],
       },
       resourceServerUrl: new URL(
-        process.env.SERVER_URL || "http://localhost:3000",
+        `${process.env.SERVER_URL || "http://localhost:3000"}/mcp`,
       ),
     }),
   )
@@ -307,6 +305,68 @@ const server = new McpServer(
       };
     },
   );
+
+// Proxy route for Earthdata Login OAuth token exchange to bypass CORS and append client_secret.
+server.express.use(
+  "/oauth/token",
+  express.urlencoded({ extended: true }),
+  (req, res, next) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Authorization",
+    );
+    if (req.method === "OPTIONS") {
+      res.sendStatus(200);
+      return;
+    }
+    next();
+  },
+);
+
+server.express.post("/oauth/token", async (req, res) => {
+  const { grant_type, code, redirect_uri } = req.body;
+  const serverUrl =
+    process.env.EARTHDATA_SERVER_URL || "https://uat.urs.earthdata.nasa.gov";
+  const clientId = process.env.EARTHDATA_CLIENT_ID;
+  const clientSecret = process.env.EARTHDATA_CLIENT_SECRET;
+
+  if (!clientId || !clientSecret) {
+    res.status(500).json({
+      error: "server_error",
+      error_description: "Client credentials not configured.",
+    });
+    return;
+  }
+
+  const authHeader = Buffer.from(`${clientId}:${clientSecret}`).toString(
+    "base64",
+  );
+
+  try {
+    const response = await fetch(`${serverUrl}/oauth/token`, {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${authHeader}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        grant_type,
+        code,
+        redirect_uri,
+      }),
+    });
+
+    const data = await response.json();
+    res.status(response.status).json(data);
+  } catch (err) {
+    res.status(500).json({
+      error: "server_error",
+      error_description: err instanceof Error ? err.message : String(err),
+    });
+  }
+});
 
 export default await server.run();
 
