@@ -10,8 +10,11 @@
     "build": "skybridge build",
     "start": "skybridge start",
     "deploy": "alpic deploy",
-    "lint": "npx biome check .",
-    "lint:fix": "npx biome check --write ."
+    "lint": "biome check",
+    "lint:fix": "biome check --write",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "release": "node scripts/release.js"
   },
   "dependencies": {
     "@alpic-ai/ui": "^1.122.0",
@@ -37,7 +40,8 @@
     "alpic": "^1.104.1",
     "tailwindcss": "^4.2.4",
     "tsx": "^4.21.0",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.10"
   },
   "engines": {
     "node": ">=24.14.1"
