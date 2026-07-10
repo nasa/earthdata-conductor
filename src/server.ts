@@ -188,7 +188,7 @@ const server = new McpServer(
               parsed.collections &&
               Array.isArray(parsed.collections)
             ) {
-              console.log('collections here')
+              console.log("collections here");
               collectionsList = parsed.collections;
             } else if (parsed.results && Array.isArray(parsed.results)) {
               collectionsList = parsed.results;

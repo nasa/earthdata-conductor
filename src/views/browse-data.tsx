@@ -15,7 +15,7 @@ export default function BrowseData() {
     setState({
       foo: "bar",
     });
-  }, []);
+  }, [setState]);
 
   return (
     <TerraProvider>

@@ -86,3 +86,8 @@ A modern, responsive, and interactive set of web views integrated into the AI as
 ### NASA Terra Components Integration (July 2026)
 * **Decision**: Integrated `@nasa-terra/components` library for data access widgets.
 * **Rationale**: Reuses official, pre-styled, and battle-tested components for Earth science data access, significantly reducing development overhead while ensuring layout and functionality consistency.
+
+### Skybridge Framework Upgrade to v1.2.7 (July 2026)
+* **Decision**: Upgraded `skybridge` and `@skybridge/devtools` from `1.1.2`/`1.0.0` to `1.2.7`.
+* **Rationale**: Keep the UI framework up to date with the latest features, enhancements, and bug fixes from Skybridge, while resolving any static analysis/linting issues with type-safety updates.
+

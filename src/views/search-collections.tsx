@@ -33,9 +33,21 @@ export default function SearchCollections() {
   const { callTool, isPending } = useCallTool("browse-data");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const query = (toolInfo.input || {}) as any;
-  const collections: Collection[] = (toolInfo.output as any)?.collections || [];
-  const error = (toolInfo.output as any)?.error;
+  interface SearchCollectionsOutput {
+    collections?: Collection[];
+    error?: string;
+  }
+
+  const query = (toolInfo.input || {}) as {
+    keyword?: string;
+    spatialArea?: string;
+    spatialWkt?: string;
+    startDate?: string;
+    endDate?: string;
+  };
+  const output = toolInfo.output as SearchCollectionsOutput | undefined;
+  const collections: Collection[] = output?.collections || [];
+  const error = output?.error;
 
   // Select the first collection by default
   useEffect(() => {
