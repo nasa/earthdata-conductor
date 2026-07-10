@@ -30,6 +30,7 @@ const server = new McpServer(
         issuer: process.env.SERVER_URL || "http://localhost:3000",
         authorization_endpoint: `${process.env.EARTHDATA_SERVER_URL || "https://uat.urs.earthdata.nasa.gov"}/oauth/authorize`,
         token_endpoint: `${process.env.SERVER_URL || "http://localhost:3000"}/oauth/token`,
+        registration_endpoint: `${process.env.SERVER_URL || "http://localhost:3000"}/oauth/register`,
         response_types_supported: ["code"],
       },
       resourceServerUrl: new URL(
@@ -371,6 +372,56 @@ server.express.post("/oauth/token", async (req: Request, res: Response) => {
       error_description: err instanceof Error ? err.message : String(err),
     });
   }
+});
+
+// Proxy route for Earthdata Login OAuth client registration to satisfy MCP client expectations.
+server.express.use(
+  "/oauth/register",
+  express.json(),
+  (req: Request, res: Response, next: NextFunction) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Authorization",
+    );
+    if (req.method === "OPTIONS") {
+      res.sendStatus(200);
+      return;
+    }
+    next();
+  },
+);
+
+server.express.post("/oauth/register", (req: Request, res: Response) => {
+  const clientId = process.env.EARTHDATA_CLIENT_ID;
+  if (!clientId) {
+    res.status(500).json({
+      error: "server_error",
+      error_description: "EARTHDATA_CLIENT_ID is not configured.",
+    });
+    return;
+  }
+
+  const {
+    redirect_uris,
+    token_endpoint_auth_method,
+    grant_types,
+    response_types,
+    client_name,
+    scope,
+  } = req.body;
+
+  res.json({
+    client_id: clientId,
+    client_id_issued_at: Math.floor(Date.now() / 1000),
+    redirect_uris: redirect_uris || ["http://localhost:3000/"],
+    token_endpoint_auth_method: token_endpoint_auth_method || "none",
+    grant_types: grant_types || ["authorization_code"],
+    response_types: response_types || ["code"],
+    client_name: client_name || "Earthdata UI MCP Client",
+    scope: scope || "",
+  });
 });
 
 export default await server.run();
