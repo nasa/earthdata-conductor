@@ -46,6 +46,10 @@ export async function verifyAccessToken(
       token,
       clientId,
       scopes: [],
+      expiresAt:
+        typeof data.exp === "number"
+          ? data.exp
+          : Math.floor(Date.now() / 1000) + 3600,
       extra: {
         uid: data.uid,
         first_name: data.first_name,

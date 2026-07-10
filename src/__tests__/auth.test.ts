@@ -37,6 +37,7 @@ describe("verifyAccessToken", () => {
       first_name: "Test",
       last_name: "User",
       email_address: "testuser@nasa.gov",
+      exp: 1783806796,
     };
 
     const mockResponse = {
@@ -52,6 +53,7 @@ describe("verifyAccessToken", () => {
       token: "valid-token",
       clientId: "mock-client-id",
       scopes: [],
+      expiresAt: 1783806796,
       extra: {
         uid: "testuser",
         first_name: "Test",
