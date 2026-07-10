@@ -1,14 +1,17 @@
-import { InvalidTokenError } from "skybridge/server";
+import { type AuthInfo, InvalidTokenError } from "skybridge/server";
 
-export interface AuthInfo {
-  uid: string;
-  first_name: string;
-  last_name: string;
-  email_address: string;
-  scopes: string[];
+export interface EarthdataAuthInfo extends AuthInfo {
+  extra: {
+    uid: string;
+    first_name: string;
+    last_name: string;
+    email_address: string;
+  };
 }
 
-export async function verifyAccessToken(token: string): Promise<AuthInfo> {
+export async function verifyAccessToken(
+  token: string,
+): Promise<EarthdataAuthInfo> {
   const serverUrl =
     process.env.EARTHDATA_SERVER_URL || "https://uat.urs.earthdata.nasa.gov";
   const clientId = process.env.EARTHDATA_CLIENT_ID;
@@ -40,11 +43,15 @@ export async function verifyAccessToken(token: string): Promise<AuthInfo> {
 
     const data = await response.json();
     return {
-      uid: data.uid,
-      first_name: data.first_name,
-      last_name: data.last_name,
-      email_address: data.email_address,
-      scopes: [], // URS doesn't use standard scopes; default to empty list
+      token,
+      clientId,
+      scopes: [],
+      extra: {
+        uid: data.uid,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        email_address: data.email_address,
+      },
     };
   } catch (err) {
     if (err instanceof InvalidTokenError) {

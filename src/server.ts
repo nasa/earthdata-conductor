@@ -6,7 +6,7 @@ import {
   optionalBearerAuth,
 } from "skybridge/server";
 import { z } from "zod";
-import { verifyAccessToken } from "./auth.js";
+import { type EarthdataAuthInfo, verifyAccessToken } from "./auth.js";
 import csp from "./csp.js";
 import { BrowseDataInputSchema } from "./schemas/browse-data.schema.js";
 import { SearchCollectionsInputSchema } from "./schemas/search-collections.schema.js";
@@ -272,12 +272,13 @@ const server = new McpServer(
         "Create a Harmony subsetting job on behalf of the user to generate a job ID.",
       inputSchema: z.object({
         collectionId: z.string(),
-        subsetParams: z.record(z.any()),
+        subsetParams: z.record(z.string(), z.any()),
       }).shape,
       securitySchemes: [{ type: "oauth2" }],
     },
     async ({ collectionId, subsetParams }, extra) => {
-      if (!extra.authInfo) {
+      const authInfo = extra.authInfo as EarthdataAuthInfo | undefined;
+      if (!authInfo) {
         return {
           content: [
             {
@@ -291,14 +292,14 @@ const server = new McpServer(
       return {
         structuredContent: {
           jobId: "harmony-job-mock-id-1234",
-          user: extra.authInfo.uid,
+          user: authInfo.extra.uid,
           collectionId,
           subsetParams,
         },
         content: [
           {
             type: "text",
-            text: `Harmony subsetting job created successfully for collection ${collectionId} (user: ${extra.authInfo.uid}).`,
+            text: `Harmony subsetting job created successfully for collection ${collectionId} (user: ${authInfo.extra.uid}).`,
           },
         ],
         isError: false,

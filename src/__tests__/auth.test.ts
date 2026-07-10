@@ -49,11 +49,15 @@ describe("verifyAccessToken", () => {
     const result = await verifyAccessToken("valid-token");
 
     expect(result).toEqual({
-      uid: "testuser",
-      first_name: "Test",
-      last_name: "User",
-      email_address: "testuser@nasa.gov",
+      token: "valid-token",
+      clientId: "mock-client-id",
       scopes: [],
+      extra: {
+        uid: "testuser",
+        first_name: "Test",
+        last_name: "User",
+        email_address: "testuser@nasa.gov",
+      },
     });
 
     const expectedAuthHeader = Buffer.from(
