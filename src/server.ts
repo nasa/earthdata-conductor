@@ -1,6 +1,11 @@
 import "dotenv/config";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import express, {
+  type NextFunction,
+  type Request,
+  type Response,
+} from "express";
 import {
   McpServer,
   mcpAuthMetadataRouter,
@@ -310,7 +315,7 @@ const server = new McpServer(
 server.express.use(
   "/oauth/token",
   express.urlencoded({ extended: true }),
-  (req, res, next) => {
+  (req: Request, res: Response, next: NextFunction) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
     res.setHeader(
@@ -325,7 +330,7 @@ server.express.use(
   },
 );
 
-server.express.post("/oauth/token", async (req, res) => {
+server.express.post("/oauth/token", async (req: Request, res: Response) => {
   const { grant_type, code, redirect_uri } = req.body;
   const serverUrl =
     process.env.EARTHDATA_SERVER_URL || "https://uat.urs.earthdata.nasa.gov";
