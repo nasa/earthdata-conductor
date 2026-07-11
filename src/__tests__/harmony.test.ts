@@ -1,5 +1,28 @@
-import { describe, expect, it } from "vitest";
-import { buildHarmonyUrl, parseJobId } from "../harmony.js";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  buildHarmonyUrl,
+  fetchLatestGranulesDateRange,
+  parseJobId,
+} from "../harmony.js";
+
+vi.mock("@modelcontextprotocol/sdk/client/index.js", () => {
+  return {
+    Client: class {
+      async connect() {}
+      async callTool(_args: unknown): Promise<unknown> {
+        return {};
+      }
+      async close() {}
+    },
+  };
+});
+
+vi.mock("@modelcontextprotocol/sdk/client/streamableHttp.js", () => {
+  return {
+    StreamableHTTPClientTransport: vi.fn(),
+  };
+});
 
 describe("Harmony helper module", () => {
   describe("buildHarmonyUrl", () => {
@@ -117,6 +140,57 @@ describe("Harmony helper module", () => {
         "https://harmony.earthdata.nasa.gov/some-other-path",
       );
       expect(res).toBeUndefined();
+    });
+  });
+
+  describe("fetchLatestGranulesDateRange", () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it("should return the formatted range of granules if found", async () => {
+      const mockGranules = [
+        { time_start: "2026-02-01T00:00:00Z" },
+        { time_start: "2026-02-15T12:00:00Z" },
+        { time_start: "2026-03-01T23:59:59Z" },
+      ];
+
+      vi.spyOn(Client.prototype, "callTool").mockResolvedValueOnce({
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(mockGranules),
+          },
+        ],
+      });
+
+      const result = await fetchLatestGranulesDateRange("C123-PROVIDER");
+      expect(result).toBe(
+        " For this collection, available granules in UAT range from 2026-02-01 to 2026-03-01.",
+      );
+    });
+
+    it("should return empty string if no granules are returned", async () => {
+      vi.spyOn(Client.prototype, "callTool").mockResolvedValueOnce({
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify([]),
+          },
+        ],
+      });
+
+      const result = await fetchLatestGranulesDateRange("C123-PROVIDER");
+      expect(result).toBe("");
+    });
+
+    it("should return empty string if client call fails", async () => {
+      vi.spyOn(Client.prototype, "callTool").mockRejectedValueOnce(
+        new Error("Connection error"),
+      );
+
+      const result = await fetchLatestGranulesDateRange("C123-PROVIDER");
+      expect(result).toBe("");
     });
   });
 });

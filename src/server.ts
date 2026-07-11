@@ -9,7 +9,11 @@ import express, {
 import { McpServer, requireBearerAuth } from "skybridge/server";
 import { type EarthdataAuthInfo, verifyAccessToken } from "./auth.js";
 import csp from "./csp.js";
-import { buildHarmonyUrl, parseJobId } from "./harmony.js";
+import {
+  buildHarmonyUrl,
+  fetchLatestGranulesDateRange,
+  parseJobId,
+} from "./harmony.js";
 import { BrowseDataInputSchema } from "./schemas/browse-data.schema.js";
 import { CreateHarmonyJobInputSchema } from "./schemas/create-harmony-job.schema.js";
 import { GetHarmonyCapabilitiesInputSchema } from "./schemas/get-harmony-capabilities.schema.js";
@@ -123,12 +127,55 @@ server
         csp,
       },
     },
-    async ({ shortName, version, spatialArea, startDate, endDate }) => {
+    async ({
+      shortName,
+      version,
+      spatialArea,
+      spatialWkt: inputSpatialWkt,
+      startDate,
+      endDate,
+    }) => {
+      let spatialWkt = inputSpatialWkt;
+
+      if (spatialArea && !spatialWkt) {
+        try {
+          const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
+            spatialArea,
+          )}&format=json&limit=1`;
+          const geoRes = await fetch(url, {
+            headers: {
+              "User-Agent":
+                "earthdata-ui-mcp/0.0.1 (contact: nasa-mcp-integration)",
+            },
+          });
+          if (geoRes.ok) {
+            const geoData = (await geoRes.json()) as Record<string, unknown>[];
+            if (geoData && geoData.length > 0) {
+              const item = geoData[0];
+              if (item.boundingbox) {
+                const bbox = item.boundingbox as [
+                  string,
+                  string,
+                  string,
+                  string,
+                ];
+                const [s, n, w, e] = bbox.map(Number);
+                spatialWkt = `POLYGON((${w} ${s}, ${w} ${n}, ${e} ${n}, ${e} ${s}, ${w} ${s}))`;
+                console.log(`Geocoded '${spatialArea}' to WKT:`, spatialWkt);
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Geocoding failed:", err);
+        }
+      }
+
       return {
         structuredContent: {
           shortName,
           version,
           spatialArea,
+          spatialWkt,
           startDate,
           endDate,
         },
@@ -296,6 +343,69 @@ server
             );
           }
         }
+
+        // Check granule availability and filter collections if filters are present
+        if (
+          collectionsList.length > 0 &&
+          (temporalStartDate || temporalEndDate || spatialWkt)
+        ) {
+          console.log(
+            `Checking granule availability for ${collectionsList.length} collections...`,
+          );
+          const checks = collectionsList.map(async (c) => {
+            const conceptId = c.concept_id as string;
+            if (!conceptId) return null;
+
+            try {
+              const granArgs: Record<string, unknown> = {
+                collection_concept_id: conceptId,
+                limit: 1,
+              };
+              if (temporalStartDate)
+                granArgs.temporal_start_date = temporalStartDate;
+              if (temporalEndDate) granArgs.temporal_end_date = temporalEndDate;
+              if (spatialWkt) granArgs.spatial_wkt_geometry = spatialWkt;
+
+              const granRes = (await mcpClient.callTool({
+                name: "get_granules",
+                arguments: granArgs,
+              })) as {
+                structuredContent?: Record<string, unknown>;
+                content?: { text: string }[];
+              };
+
+              let totalHits = 0;
+              if (
+                granRes.structuredContent &&
+                typeof granRes.structuredContent.total_hits === "number"
+              ) {
+                totalHits = granRes.structuredContent.total_hits;
+              } else if (granRes.content?.[0]) {
+                const parsedGran = JSON.parse(granRes.content[0].text);
+                totalHits = parsedGran.total_hits ?? 0;
+              }
+
+              if (totalHits > 0) {
+                return { ...c, granule_count: totalHits };
+              }
+              console.log(
+                `Filtering out collection '${conceptId}' because it has 0 granules in the date range.`,
+              );
+              return null;
+            } catch (err) {
+              console.error(
+                `Failed to check granules for collection ${conceptId}:`,
+                err,
+              );
+              return c;
+            }
+          });
+
+          const results = await Promise.all(checks);
+          collectionsList = results.filter(
+            (item): item is Record<string, unknown> => item !== null,
+          );
+        }
       } catch (mcpErr) {
         console.error("Error communicating with Earthdata MCP UAT:", mcpErr);
         return {
@@ -324,7 +434,7 @@ server
         content: [
           {
             type: "text",
-            text: `Found ${collectionsList.length} collections matching '${keyword}'. The user is currently viewing these collections in an interactive search UI list. DO NOT summarize, list, or write out details of these collections in your response, as that would duplicate the user interface. Simply prompt the user to choose a dataset from the UI.`,
+            text: `Found ${collectionsList.length} collections matching '${keyword}'. The user is currently viewing these collections in an interactive search UI list. DO NOT summarize, list, or write out details of these collections in your response, as that would duplicate the user interface. Simply prompt the user to choose a dataset from the UI. If the user asks which dataset is recommended, recommend one or two collections based on their properties, but instruct the user to select them in the interactive UI to view details, configure variables, or subset. Do not list all options or write out details of other datasets.`,
           },
         ],
         isError: false,
@@ -404,11 +514,12 @@ server
         if (!res.ok) {
           const errText = await res.text();
           console.error("Harmony request failed:", res.status, errText);
+          const rangeInfo = await fetchLatestGranulesDateRange(conceptId);
           return {
             content: [
               {
                 type: "text",
-                text: `Failed to create Harmony job. Status: ${res.status}. Error: ${errText}`,
+                text: `Failed to create Harmony job. Status: ${res.status}. Error: ${errText}.${rangeInfo}`,
               },
             ],
             isError: true,

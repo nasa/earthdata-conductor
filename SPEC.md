@@ -68,7 +68,7 @@ A modern, responsive, and interactive set of web views integrated into the AI as
 * **UI/Component Enhancements** (Planned):
   - [x] **Dataset Chooser Component**: A streamlined widget for selecting and switching between active datasets (Completed).
   - [x] **Output Format Component**: Elegant UI to select output formats (e.g. NetCDF), select variables, and run the transformation (Completed).
-  - [ ] **Parameter Mapping**: Ensure the Data Access component accepts spatial, temporal, and other subsetting constraints.
+  - [x] **Parameter Mapping**: Ensure the Data Access component accepts spatial, temporal, and other subsetting constraints (Completed).
   - [ ] **Browser-side Subsetter**: Configure the Subsetter component to handle Harmony wrangling directly in the user's browser and trigger a completion event when done.
 
 * **Visualization & Analysis** (Planned):
@@ -107,4 +107,10 @@ A modern, responsive, and interactive set of web views integrated into the AI as
 ### Harmony Capabilities & Variable-First UI Flow (July 2026)
 * **Decision**: Created the `get-harmony-capabilities` tool and updated the `SearchCollections` UI detail column to render Action Tabs (Browse Files, Subset Data, Plot Data) dynamically based on collection capabilities.
 * **Rationale**: Decouples dataset exploration from subsetting details, allowing the user to browse variables, check constraints, select output formats, and create subsetting jobs with a single click.
+### Granule-Aware Harmony Job Creation Error Fallback (July 2026)
+* **Decision**: Configured the `create-harmony-job` tool handler on the server to catch job submission failures, fetch the latest 10 granules for the target collection from the remote UAT MCP server using the `get_granules` tool, and inject the range of available dates directly into the returned error message.
+* **Rationale**: Eliminates blind date-range guessing by the assistant or the user when Harmony subsetting fails due to UAT archive sparse date coverage.
 
+### Data Access Parameter Mapping with LatLngBounds (July 2026)
+* **Decision**: Mapped `startDate`, `endDate`, and parsed geographic bounding box coordinates (as `LatLngBounds`) to the `<TerraDataAccess>` `searchParams` property in the React `browse-data` view.
+* **Rationale**: Resolves empty file list displays by pre-filtering granule queries to the user's actual area of interest and selected timeframe.

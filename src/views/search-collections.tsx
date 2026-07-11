@@ -1,10 +1,17 @@
+import TerraBadge from "@nasa-terra/components/dist/react/badge/index.js";
+import TerraButton from "@nasa-terra/components/dist/react/button/index.js";
+import TerraCard from "@nasa-terra/components/dist/react/card/index.js";
+import TerraLoader from "@nasa-terra/components/dist/react/loader/index.js";
+import TerraTab from "@nasa-terra/components/dist/react/tab/index.js";
+import TerraTabPanel from "@nasa-terra/components/dist/react/tab-panel/index.js";
+import TerraTabs from "@nasa-terra/components/dist/react/tabs/index.js";
+import TerraTag from "@nasa-terra/components/dist/react/tag/index.js";
 import {
   ArrowRight,
   Calendar,
   Compass,
   Database,
   Info,
-  Loader2,
   MapPin,
   Search,
 } from "lucide-react";
@@ -26,6 +33,7 @@ interface Collection {
   instruments?: string[];
   time_start?: string;
   time_end?: string;
+  granule_count?: number;
 }
 
 interface HarmonyVariable {
@@ -150,6 +158,7 @@ export default function SearchCollections() {
       shortName: collection.short_name,
       version: collection.version || "latest",
       spatialArea: query.spatialArea,
+      spatialWkt: query.spatialWkt,
       startDate: query.startDate,
       endDate: query.endDate,
     });
@@ -190,25 +199,25 @@ export default function SearchCollections() {
           </div>
 
           {/* Active Search Parameters Summary */}
-          <div className="mt-4 flex flex-wrap gap-3 text-xs">
-            <div className="flex items-center gap-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800/60 px-3 py-1 text-zinc-600 dark:text-zinc-300">
-              <Search className="h-3.5 w-3.5 text-zinc-400" />
-              <span>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <TerraTag variant="content" size="small">
+              <span className="flex items-center gap-1">
+                <Search className="h-3.5 w-3.5 text-indigo-500" />
                 Keyword: <strong>{query.keyword || "N/A"}</strong>
               </span>
-            </div>
+            </TerraTag>
             {query.spatialArea && (
-              <div className="flex items-center gap-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800/60 px-3 py-1 text-zinc-600 dark:text-zinc-300">
-                <MapPin className="h-3.5 w-3.5 text-zinc-400" />
-                <span>
+              <TerraTag variant="content" size="small">
+                <span className="flex items-center gap-1">
+                  <MapPin className="h-3.5 w-3.5 text-cyan-500" />
                   Area: <strong>{query.spatialArea}</strong>
                 </span>
-              </div>
+              </TerraTag>
             )}
             {(query.startDate || query.endDate) && (
-              <div className="flex items-center gap-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800/60 px-3 py-1 text-zinc-600 dark:text-zinc-300">
-                <Calendar className="h-3.5 w-3.5 text-zinc-400" />
-                <span>
+              <TerraTag variant="content" size="small">
+                <span className="flex items-center gap-1">
+                  <Calendar className="h-3.5 w-3.5 text-purple-500" />
                   Time:{" "}
                   <strong>
                     {query.startDate ? formatDate(query.startDate) : "Anytime"}
@@ -218,7 +227,7 @@ export default function SearchCollections() {
                     {query.endDate ? formatDate(query.endDate) : "Anytime"}
                   </strong>
                 </span>
-              </div>
+              </TerraTag>
             )}
           </div>
         </div>
@@ -261,37 +270,45 @@ export default function SearchCollections() {
                     type="button"
                     key={c.concept_id}
                     onClick={() => setSelectedId(c.concept_id)}
-                    className={`w-full text-left p-3.5 rounded-lg border transition-all duration-200 group relative overflow-hidden ${
-                      isSelected
-                        ? "border-indigo-500 bg-indigo-50/20 dark:bg-indigo-950/10 shadow-sm"
-                        : "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-indigo-300 dark:hover:border-indigo-800 hover:shadow-xs"
-                    }`}
+                    className="w-full text-left focus:outline-hidden transition-all"
                   >
-                    {isSelected && (
-                      <div className="absolute top-0 left-0 h-full w-[3px] bg-indigo-500" />
-                    )}
-                    <div className="flex justify-between items-start gap-2">
-                      <span className="inline-flex items-center rounded-md bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 text-[10px] font-medium text-zinc-600 dark:text-zinc-300 border border-zinc-200/50 dark:border-zinc-700/50">
-                        {c.short_name || "Unknown"}
-                      </span>
-                      {c.version && (
-                        <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono">
-                          v{c.version}
-                        </span>
-                      )}
-                    </div>
-                    <h4
-                      className={`text-xs font-semibold mt-2 line-clamp-2 transition-colors ${
+                    <TerraCard
+                      className={`block w-full transition-all duration-200 ${
                         isSelected
-                          ? "text-indigo-600 dark:text-indigo-400"
-                          : "text-zinc-800 dark:text-zinc-200 group-hover:text-indigo-500"
+                          ? "[--border-color:var(--color-indigo-500)] bg-indigo-50/10 dark:bg-indigo-950/5 shadow-md"
+                          : "hover:[--border-color:var(--color-indigo-300)] hover:shadow-xs"
                       }`}
                     >
-                      {c.entry_title}
-                    </h4>
-                    <p className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-1 line-clamp-2 leading-relaxed">
-                      {c.summary || c.description || "No summary available."}
-                    </p>
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="flex flex-wrap gap-1.5 items-center">
+                          <TerraBadge variant="neutral" pill>
+                            {c.short_name || "Unknown"}
+                          </TerraBadge>
+                          {c.granule_count !== undefined && (
+                            <TerraBadge variant="success" pill>
+                              {c.granule_count} granules
+                            </TerraBadge>
+                          )}
+                        </div>
+                        {c.version && (
+                          <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono">
+                            v{c.version}
+                          </span>
+                        )}
+                      </div>
+                      <h4
+                        className={`text-xs font-semibold mt-2 line-clamp-2 transition-colors ${
+                          isSelected
+                            ? "text-indigo-600 dark:text-indigo-400 font-bold"
+                            : "text-zinc-800 dark:text-zinc-200"
+                        }`}
+                      >
+                        {c.entry_title}
+                      </h4>
+                      <p className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-1 line-clamp-2 leading-relaxed">
+                        {c.summary || c.description || "No summary available."}
+                      </p>
+                    </TerraCard>
                   </button>
                 );
               })}
@@ -304,19 +321,24 @@ export default function SearchCollections() {
                   <div className="space-y-4">
                     {/* Title and ID Info */}
                     <div>
-                      <div className="flex flex-wrap gap-2 items-center text-xs mb-1">
-                        <span className="font-mono text-zinc-400 dark:text-zinc-500 text-[10px]">
+                      <div className="flex flex-wrap gap-2 items-center text-xs mb-2">
+                        <TerraTag variant="topic" size="small">
                           ID: {selectedCollection.concept_id}
-                        </span>
+                        </TerraTag>
                         {selectedCollection.provider_id && (
-                          <span className="px-1.5 py-0.5 rounded bg-cyan-100/40 dark:bg-cyan-950/30 text-cyan-700 dark:text-cyan-400 text-[9px] font-medium">
+                          <TerraBadge variant="information">
                             Provider: {selectedCollection.provider_id}
-                          </span>
+                          </TerraBadge>
                         )}
                         {selectedCollection.processing_level_id && (
-                          <span className="px-1.5 py-0.5 rounded bg-purple-100/40 dark:bg-purple-950/30 text-purple-700 dark:text-purple-400 text-[9px] font-medium">
+                          <TerraBadge variant="success">
                             Level: {selectedCollection.processing_level_id}
-                          </span>
+                          </TerraBadge>
+                        )}
+                        {selectedCollection.granule_count !== undefined && (
+                          <TerraBadge variant="success">
+                            {selectedCollection.granule_count} granules
+                          </TerraBadge>
                         )}
                       </div>
                       <h3 className="text-base font-bold text-zinc-800 dark:text-zinc-100 leading-snug">
@@ -415,300 +437,295 @@ export default function SearchCollections() {
                           s.name?.toLowerCase().includes("giovanni"),
                         );
 
-                        return (
-                          <>
-                            <div className="flex gap-1 bg-zinc-100 dark:bg-zinc-800/60 p-0.5 rounded-lg text-xs mb-4">
-                              <button
-                                type="button"
-                                onClick={() => setActiveTab("original")}
-                                className={`flex-1 py-1.5 px-3 rounded-md font-medium transition-all ${
-                                  activeTab === "original"
-                                    ? "bg-white dark:bg-zinc-900 shadow-xs text-indigo-600 dark:text-indigo-400"
-                                    : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
-                                }`}
+                        return loadingCaps ? (
+                          <div className="flex flex-col items-center justify-center gap-3 py-10">
+                            <TerraLoader indeterminate />
+                            <span className="text-xs text-zinc-500 font-medium">
+                              Loading capabilities...
+                            </span>
+                          </div>
+                        ) : (
+                          <TerraTabs
+                            onTerraTabShow={(
+                              e: CustomEvent<{
+                                name: "original" | "subset" | "plot";
+                              }>,
+                            ) => setActiveTab(e.detail.name)}
+                          >
+                            <TerraTab
+                              slot="nav"
+                              panel="original"
+                              active={activeTab === "original"}
+                            >
+                              Browse Files
+                            </TerraTab>
+                            {hasSubsetting && (
+                              <TerraTab
+                                slot="nav"
+                                panel="subset"
+                                active={activeTab === "subset"}
                               >
-                                Browse Files
-                              </button>
-                              {hasSubsetting && (
-                                <button
-                                  type="button"
-                                  onClick={() => setActiveTab("subset")}
-                                  className={`flex-1 py-1.5 px-3 rounded-md font-medium transition-all ${
-                                    activeTab === "subset"
-                                      ? "bg-white dark:bg-zinc-900 shadow-xs text-indigo-600 dark:text-indigo-400"
-                                      : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
-                                  }`}
-                                >
-                                  Subset Data
-                                </button>
-                              )}
-                              {hasGiovanni && (
-                                <button
-                                  type="button"
-                                  onClick={() => setActiveTab("plot")}
-                                  className={`flex-1 py-1.5 px-3 rounded-md font-medium transition-all ${
-                                    activeTab === "plot"
-                                      ? "bg-white dark:bg-zinc-900 shadow-xs text-indigo-600 dark:text-indigo-400"
-                                      : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
-                                  }`}
-                                >
-                                  Plot Data
-                                </button>
-                              )}
-                            </div>
-
-                            {loadingCaps && (
-                              <div className="flex items-center justify-center gap-2 py-8 text-xs text-zinc-500">
-                                <Loader2 className="h-4 w-4 animate-spin text-indigo-500" />
-                                <span>Loading capabilities...</span>
-                              </div>
+                                Subset Data
+                              </TerraTab>
+                            )}
+                            {hasGiovanni && (
+                              <TerraTab
+                                slot="nav"
+                                panel="plot"
+                                active={activeTab === "plot"}
+                              >
+                                Plot Data
+                              </TerraTab>
                             )}
 
-                            {!loadingCaps && activeTab === "original" && (
-                              <div className="space-y-4">
+                            <TerraTabPanel
+                              name="original"
+                              active={activeTab === "original"}
+                            >
+                              <div className="space-y-4 pt-4">
                                 <p className="text-xs text-zinc-500 leading-relaxed">
                                   Access the original dataset files directly
                                   from the archive. You will be able to select
                                   and download raw granules.
                                 </p>
                                 <div className="flex justify-end pt-2">
-                                  <button
-                                    type="button"
+                                  <TerraButton
                                     disabled={isPending}
+                                    loading={isPending}
                                     onClick={() =>
                                       handleAccess(selectedCollection)
                                     }
-                                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-400 px-5 py-2.5 text-sm font-semibold text-white shadow-xs hover:shadow-md active:scale-98 transition-all cursor-pointer w-full sm:w-auto"
+                                    className="w-full sm:w-auto"
                                   >
-                                    {isPending ? (
-                                      <>
-                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                        <span>Loading Data Access...</span>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <span>Browse Original Files</span>
-                                        <ArrowRight className="h-4 w-4" />
-                                      </>
-                                    )}
-                                  </button>
+                                    Browse Original Files
+                                    <ArrowRight
+                                      className="h-4 w-4 ml-1.5"
+                                      slot="suffix"
+                                    />
+                                  </TerraButton>
                                 </div>
                               </div>
-                            )}
+                            </TerraTabPanel>
 
-                            {!loadingCaps && activeTab === "subset" && (
-                              <div className="space-y-4">
-                                <div className="space-y-1.5">
-                                  <span className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block">
-                                    Select Variable of Interest
-                                  </span>
-                                  <div className="max-h-[140px] overflow-y-auto border border-zinc-200 dark:border-zinc-800 rounded-lg p-2 bg-zinc-50/50 dark:bg-zinc-900/50 space-y-1">
-                                    {variables.map((v: HarmonyVariable) => {
-                                      const varId =
-                                        v.href?.split("/").pop() || "";
-                                      const isSelected =
-                                        selectedVariableId === varId;
-                                      return (
-                                        <button
-                                          type="button"
-                                          key={varId}
-                                          onClick={() =>
-                                            setSelectedVariableId(varId)
-                                          }
-                                          className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs transition-colors flex items-center justify-between ${
-                                            isSelected
-                                              ? "bg-indigo-500/10 border border-indigo-500/30 text-indigo-600 dark:text-indigo-400 font-semibold"
-                                              : "hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-transparent text-zinc-700 dark:text-zinc-300"
-                                          }`}
-                                        >
-                                          <span>{v.name}</span>
-                                          <span className="text-[10px] text-zinc-400 truncate ml-2 max-w-[200px]">
-                                            {v.longName || v.name}
-                                          </span>
-                                        </button>
-                                      );
-                                    })}
+                            {hasSubsetting && (
+                              <TerraTabPanel
+                                name="subset"
+                                active={activeTab === "subset"}
+                              >
+                                <div className="space-y-4 pt-4">
+                                  <div className="space-y-1.5">
+                                    <span className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block">
+                                      Select Variable of Interest
+                                    </span>
+                                    <div className="max-h-[140px] overflow-y-auto border border-zinc-200 dark:border-zinc-800 rounded-lg p-2 bg-zinc-50/50 dark:bg-zinc-900/50 space-y-1">
+                                      {variables.map((v: HarmonyVariable) => {
+                                        const varId =
+                                          v.href?.split("/").pop() || "";
+                                        const isSelected =
+                                          selectedVariableId === varId;
+                                        return (
+                                          <button
+                                            type="button"
+                                            key={varId}
+                                            onClick={() =>
+                                              setSelectedVariableId(varId)
+                                            }
+                                            className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs transition-colors flex items-center justify-between ${
+                                              isSelected
+                                                ? "bg-indigo-500/10 border border-indigo-500/30 text-indigo-600 dark:text-indigo-400 font-semibold"
+                                                : "hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-transparent text-zinc-700 dark:text-zinc-300"
+                                            }`}
+                                          >
+                                            <span>{v.name}</span>
+                                            <span className="text-[10px] text-zinc-400 truncate ml-2 max-w-[200px]">
+                                              {v.longName || v.name}
+                                            </span>
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
                                   </div>
-                                </div>
 
-                                <div className="space-y-1.5">
-                                  <label
-                                    htmlFor="format-select"
-                                    className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block"
-                                  >
-                                    Output Format
-                                  </label>
-                                  <select
-                                    id="format-select"
-                                    value={selectedFormat}
-                                    onChange={(e) =>
-                                      setSelectedFormat(e.target.value)
-                                    }
-                                    className="w-full text-xs border border-zinc-200 dark:border-zinc-800 rounded-lg p-2 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 focus:border-indigo-500 focus:outline-hidden"
-                                  >
-                                    {caps?.summary?.outputFormats?.map(
-                                      (f: HarmonyOutputFormat) => (
-                                        <option
-                                          key={f.mimeType}
-                                          value={f.mimeType}
-                                        >
-                                          {f.name} ({f.mimeType})
-                                        </option>
-                                      ),
-                                    )}
-                                  </select>
-                                </div>
-
-                                <div className="rounded-lg bg-zinc-50 dark:bg-zinc-900/60 p-3 border border-zinc-100 dark:border-zinc-800 text-[11px] text-zinc-500 space-y-1">
-                                  <span className="font-semibold text-zinc-700 dark:text-zinc-300 block mb-1">
-                                    Constraints (from search):
-                                  </span>
-                                  {query.spatialArea && (
-                                    <div>
-                                      • Spatial bounding box:{" "}
-                                      <strong>{query.spatialArea}</strong>
-                                    </div>
-                                  )}
-                                  {(query.startDate || query.endDate) && (
-                                    <div>
-                                      • Temporal bounds:{" "}
-                                      <strong>
-                                        {query.startDate
-                                          ? formatDate(query.startDate)
-                                          : "Anytime"}
-                                      </strong>{" "}
-                                      to{" "}
-                                      <strong>
-                                        {query.endDate
-                                          ? formatDate(query.endDate)
-                                          : "Anytime"}
-                                      </strong>
-                                    </div>
-                                  )}
-                                </div>
-
-                                <div className="flex justify-end pt-2">
-                                  <button
-                                    type="button"
-                                    disabled={
-                                      isPending ||
-                                      creatingJob ||
-                                      !selectedVariableId
-                                    }
-                                    onClick={() => {
-                                      if (!selectedVariableId) return;
-
-                                      let bbox: number[] | undefined;
-                                      if (query.spatialWkt) {
-                                        const matches = [
-                                          ...query.spatialWkt.matchAll(
-                                            /(-?\d+\.?\d*)\s+(-?\d+\.?\d*)/g,
-                                          ),
-                                        ];
-                                        if (matches.length >= 4) {
-                                          const lons = matches.map((m) =>
-                                            Number(m[1]),
-                                          );
-                                          const lats = matches.map((m) =>
-                                            Number(m[2]),
-                                          );
-                                          bbox = [
-                                            Math.min(...lons),
-                                            Math.min(...lats),
-                                            Math.max(...lons),
-                                            Math.max(...lats),
-                                          ];
-                                        }
+                                  <div className="space-y-1.5">
+                                    <label
+                                      htmlFor="format-select"
+                                      className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block"
+                                    >
+                                      Output Format
+                                    </label>
+                                    <select
+                                      id="format-select"
+                                      value={selectedFormat}
+                                      onChange={(e) =>
+                                        setSelectedFormat(e.target.value)
                                       }
+                                      className="w-full text-xs border border-zinc-200 dark:border-zinc-800 rounded-lg p-2 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 focus:border-indigo-500 focus:outline-hidden"
+                                    >
+                                      {caps?.summary?.outputFormats?.map(
+                                        (f: HarmonyOutputFormat) => (
+                                          <option
+                                            key={f.mimeType}
+                                            value={f.mimeType}
+                                          >
+                                            {f.name} ({f.mimeType})
+                                          </option>
+                                        ),
+                                      )}
+                                    </select>
+                                  </div>
 
-                                      triggerHarmonyJob({
-                                        conceptId:
-                                          selectedCollection.concept_id,
-                                        variableEntryId: selectedVariableId,
-                                        boundingBox: bbox,
-                                        startDate: query.startDate,
-                                        endDate: query.endDate,
-                                        format: selectedFormat,
-                                      });
-                                    }}
-                                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-400 px-5 py-2.5 text-sm font-semibold text-white shadow-xs hover:shadow-md active:scale-98 transition-all cursor-pointer w-full sm:w-auto"
-                                  >
-                                    {creatingJob ? (
-                                      <>
-                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                        <span>Creating Subsetting Job...</span>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <span>Subset & Transform</span>
-                                        <ArrowRight className="h-4 w-4" />
-                                      </>
+                                  <div className="rounded-lg bg-zinc-50 dark:bg-zinc-900/60 p-3 border border-zinc-100 dark:border-zinc-800 text-[11px] text-zinc-500 space-y-1">
+                                    <span className="font-semibold text-zinc-700 dark:text-zinc-300 block mb-1">
+                                      Constraints (from search):
+                                    </span>
+                                    {query.spatialArea && (
+                                      <div>
+                                        • Spatial bounding box:{" "}
+                                        <strong>{query.spatialArea}</strong>
+                                      </div>
                                     )}
-                                  </button>
-                                </div>
-                              </div>
-                            )}
+                                    {(query.startDate || query.endDate) && (
+                                      <div>
+                                        • Temporal bounds:{" "}
+                                        <strong>
+                                          {query.startDate
+                                            ? formatDate(query.startDate)
+                                            : "Anytime"}
+                                        </strong>{" "}
+                                        to{" "}
+                                        <strong>
+                                          {query.endDate
+                                            ? formatDate(query.endDate)
+                                            : "Anytime"}
+                                        </strong>
+                                      </div>
+                                    )}
+                                  </div>
 
-                            {!loadingCaps && activeTab === "plot" && (
-                              <div className="space-y-4">
-                                <div className="space-y-1.5">
-                                  <span className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block">
-                                    Select Variable to Plot
-                                  </span>
-                                  <div className="max-h-[140px] overflow-y-auto border border-zinc-200 dark:border-zinc-800 rounded-lg p-2 bg-zinc-50/50 dark:bg-zinc-900/50 space-y-1">
-                                    {variables.map((v: HarmonyVariable) => {
-                                      const varId =
-                                        v.href?.split("/").pop() || "";
-                                      const isSelected =
-                                        selectedVariableId === varId;
-                                      return (
-                                        <button
-                                          type="button"
-                                          key={varId}
-                                          onClick={() =>
-                                            setSelectedVariableId(varId)
+                                  <div className="flex justify-end pt-2">
+                                    <TerraButton
+                                      disabled={
+                                        isPending ||
+                                        creatingJob ||
+                                        !selectedVariableId
+                                      }
+                                      loading={creatingJob}
+                                      onClick={() => {
+                                        if (!selectedVariableId) return;
+
+                                        let bbox: number[] | undefined;
+                                        if (query.spatialWkt) {
+                                          const matches = [
+                                            ...query.spatialWkt.matchAll(
+                                              /(-?\d+\.?\d*)\s+(-?\d+\.?\d*)/g,
+                                            ),
+                                          ];
+                                          if (matches.length >= 4) {
+                                            const lons = matches.map((m) =>
+                                              Number(m[1]),
+                                            );
+                                            const lats = matches.map((m) =>
+                                              Number(m[2]),
+                                            );
+                                            bbox = [
+                                              Math.min(...lons),
+                                              Math.min(...lats),
+                                              Math.max(...lons),
+                                              Math.max(...lats),
+                                            ];
                                           }
-                                          className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs transition-colors flex items-center justify-between ${
-                                            isSelected
-                                              ? "bg-indigo-500/10 border border-indigo-500/30 text-indigo-600 dark:text-indigo-400 font-semibold"
-                                              : "hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-transparent text-zinc-700 dark:text-zinc-300"
-                                          }`}
-                                        >
-                                          <span>{v.name}</span>
-                                          <span className="text-[10px] text-zinc-400 truncate ml-2 max-w-[200px]">
-                                            {v.longName || v.name}
-                                          </span>
-                                        </button>
-                                      );
-                                    })}
+                                        }
+
+                                        triggerHarmonyJob({
+                                          conceptId:
+                                            selectedCollection.concept_id,
+                                          variableEntryId: selectedVariableId,
+                                          boundingBox: bbox,
+                                          startDate: query.startDate,
+                                          endDate: query.endDate,
+                                          format: selectedFormat,
+                                        });
+                                      }}
+                                      className="w-full sm:w-auto"
+                                    >
+                                      Subset & Transform
+                                      <ArrowRight
+                                        className="h-4 w-4 ml-1.5"
+                                        slot="suffix"
+                                      />
+                                    </TerraButton>
                                   </div>
                                 </div>
-
-                                <p className="text-xs text-zinc-500 leading-relaxed">
-                                  Plot and visualize data using the{" "}
-                                  <strong>Giovanni</strong> averaging and
-                                  mapping service. Custom charting and map
-                                  overlays will be rendered directly inside the
-                                  chat.
-                                </p>
-
-                                <div className="flex justify-end pt-2">
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      alert(
-                                        "Plotting with Giovanni (Planned visualization feature)",
-                                      )
-                                    }
-                                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 px-5 py-2.5 text-sm font-semibold text-white shadow-xs hover:shadow-md active:scale-98 transition-all cursor-pointer w-full sm:w-auto"
-                                  >
-                                    <span>Plot / Analyze Data</span>
-                                    <ArrowRight className="h-4 w-4" />
-                                  </button>
-                                </div>
-                              </div>
+                              </TerraTabPanel>
                             )}
-                          </>
+
+                            {hasGiovanni && (
+                              <TerraTabPanel
+                                name="plot"
+                                active={activeTab === "plot"}
+                              >
+                                <div className="space-y-4 pt-4">
+                                  <div className="space-y-1.5">
+                                    <span className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block">
+                                      Select Variable to Plot
+                                    </span>
+                                    <div className="max-h-[140px] overflow-y-auto border border-zinc-200 dark:border-zinc-800 rounded-lg p-2 bg-zinc-50/50 dark:bg-zinc-900/50 space-y-1">
+                                      {variables.map((v: HarmonyVariable) => {
+                                        const varId =
+                                          v.href?.split("/").pop() || "";
+                                        const isSelected =
+                                          selectedVariableId === varId;
+                                        return (
+                                          <button
+                                            type="button"
+                                            key={varId}
+                                            onClick={() =>
+                                              setSelectedVariableId(varId)
+                                            }
+                                            className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs transition-colors flex items-center justify-between ${
+                                              isSelected
+                                                ? "bg-indigo-500/10 border border-indigo-500/30 text-indigo-600 dark:text-indigo-400 font-semibold"
+                                                : "hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-transparent text-zinc-700 dark:text-zinc-300"
+                                            }`}
+                                          >
+                                            <span>{v.name}</span>
+                                            <span className="text-[10px] text-zinc-400 truncate ml-2 max-w-[200px]">
+                                              {v.longName || v.name}
+                                            </span>
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+
+                                  <p className="text-xs text-zinc-500 leading-relaxed">
+                                    Plot and visualize data using the{" "}
+                                    <strong>Giovanni</strong> averaging and
+                                    mapping service. Custom charting and map
+                                    overlays will be rendered directly inside
+                                    the chat.
+                                  </p>
+
+                                  <div className="flex justify-end pt-2">
+                                    <TerraButton
+                                      onClick={() =>
+                                        alert(
+                                          "Plotting with Giovanni (Planned visualization feature)",
+                                        )
+                                      }
+                                      className="w-full sm:w-auto"
+                                    >
+                                      Plot / Analyze Data
+                                      <ArrowRight
+                                        className="h-4 w-4 ml-1.5"
+                                        slot="suffix"
+                                      />
+                                    </TerraButton>
+                                  </div>
+                                </div>
+                              </TerraTabPanel>
+                            )}
+                          </TerraTabs>
                         );
                       })()}
                     </div>
