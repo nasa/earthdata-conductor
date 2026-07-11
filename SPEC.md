@@ -61,9 +61,9 @@ A modern, responsive, and interactive set of web views integrated into the AI as
   - [x] Mixed-auth middleware allowing public search and authenticated actions.
   - [x] Custom token verification against Earthdata Login's token user validation endpoint.
 
-* **Harmony Subsetting Integration** (Planned):
-  - [ ] **Job Creation Tool**: Create a Harmony subsetting job on behalf of the user to generate a job ID. (Mock skeleton added).
-  - [ ] **Harmony Subsetter View**: Load the Harmony subsetter UI component pre-populated with the generated job ID.
+* **Harmony Subsetting Integration** (Completed):
+  - [x] **Job Creation Tool**: Create a Harmony subsetting job on behalf of the user to generate a job ID.
+  - [x] **Harmony Subsetter View**: Load the Harmony subsetter UI component pre-populated with the generated job ID.
 
 * **UI/Component Enhancements** (Planned):
   - [ ] **Dataset Chooser Component**: A streamlined widget for selecting and switching between active datasets.
@@ -99,4 +99,8 @@ A modern, responsive, and interactive set of web views integrated into the AI as
 ### NASA Earthdata Login OAuth Integration (July 2026)
 * **Decision**: Configured Skybridge's OAuth metadata router and optional Bearer token middleware with Earthdata Login as the Identity Provider. Added a custom validation handler querying URS's `/oauth/tokens/user` endpoint.
 * **Rationale**: Enables secure user authentication. Mixed-auth routing allows discovery tools (`search-collections`, `browse-data`) to run anonymously while requiring sign-in for transformation and Harmony subsetting actions.
+
+### Harmony Subsetting Integration (July 2026)
+* **Decision**: Implemented the `create-harmony-job` tool using direct NASA Harmony OGC Coverages API requests, and registered a new view component `harmony-subsetter` using `@nasa-terra/components`'s `TerraDataSubsetter`.
+* **Rationale**: Replaces mock job IDs with real, authenticated jobs generated on behalf of the user, and loads the official subsetter component pre-populated with the Job ID and OAuth token for seamless download and status tracking.
 

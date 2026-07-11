@@ -11,10 +11,11 @@ import {
   mcpAuthMetadataRouter,
   optionalBearerAuth,
 } from "skybridge/server";
-import { z } from "zod";
 import { type EarthdataAuthInfo, verifyAccessToken } from "./auth.js";
 import csp from "./csp.js";
+import { buildHarmonyUrl, parseJobId } from "./harmony.js";
 import { BrowseDataInputSchema } from "./schemas/browse-data.schema.js";
+import { CreateHarmonyJobInputSchema } from "./schemas/create-harmony-job.schema.js";
 import { SearchCollectionsInputSchema } from "./schemas/search-collections.schema.js";
 
 const server = new McpServer(
@@ -275,13 +276,30 @@ const server = new McpServer(
       name: "create-harmony-job",
       description:
         "Create a Harmony subsetting job on behalf of the user to generate a job ID.",
-      inputSchema: z.object({
-        collectionId: z.string(),
-        subsetParams: z.record(z.string(), z.any()),
-      }).shape,
+      inputSchema: CreateHarmonyJobInputSchema.shape,
       securitySchemes: [{ type: "oauth2" }],
+      annotations: {
+        title: "Create Harmony Subsetting Job",
+        readOnlyHint: false,
+        destructiveHint: false,
+        openWorldHint: false,
+      },
+      _meta: {
+        "openai/toolInvocation/invoking":
+          "🔄 Creating Harmony subsetting job...",
+        "openai/toolInvocation/invoked": "Harmony job created successfully.",
+      },
+      view: {
+        component: "harmony-subsetter",
+        domain: "https://nasa.gov",
+        description: "Harmony Subsetting View",
+        csp,
+      },
     },
-    async ({ collectionId, subsetParams }, extra) => {
+    async (
+      { conceptId, variableEntryId, boundingBox, startDate, endDate, format },
+      extra,
+    ) => {
       const authInfo = extra.authInfo as EarthdataAuthInfo | undefined;
       if (!authInfo) {
         return {
@@ -294,21 +312,95 @@ const server = new McpServer(
           isError: true,
         };
       }
-      return {
-        structuredContent: {
-          jobId: "harmony-job-mock-id-1234",
-          user: authInfo.extra.uid,
-          collectionId,
-          subsetParams,
-        },
-        content: [
-          {
-            type: "text",
-            text: `Harmony subsetting job created successfully for collection ${collectionId} (user: ${authInfo.extra.uid}).`,
+
+      const serverUrl =
+        process.env.EARTHDATA_SERVER_URL || "https://urs.earthdata.nasa.gov";
+      const harmonyBaseUrl =
+        process.env.HARMONY_SERVER_URL ||
+        (serverUrl.includes("uat")
+          ? "https://harmony.uat.earthdata.nasa.gov"
+          : "https://harmony.earthdata.nasa.gov");
+
+      const harmonyUrl = buildHarmonyUrl({
+        conceptId,
+        variableEntryId,
+        boundingBox,
+        startDate,
+        endDate,
+        format,
+        harmonyBaseUrl,
+      });
+
+      try {
+        console.log("Submitting Harmony request:", harmonyUrl);
+        const res = await fetch(harmonyUrl, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${authInfo.token}`,
           },
-        ],
-        isError: false,
-      };
+          redirect: "follow",
+        });
+
+        if (!res.ok) {
+          const errText = await res.text();
+          console.error("Harmony request failed:", res.status, errText);
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Failed to create Harmony job. Status: ${res.status}. Error: ${errText}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+
+        const data = (await res.json()) as {
+          jobID?: string;
+          [key: string]: unknown;
+        };
+        const jobId = parseJobId(data, res.url);
+
+        if (!jobId) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Harmony job created, but failed to retrieve Job ID from response. Final URL: ${res.url}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+
+        return {
+          structuredContent: {
+            jobId,
+            bearerToken: authInfo.token,
+            user: authInfo.extra.uid,
+            conceptId,
+            variableEntryId,
+          },
+          content: [
+            {
+              type: "text",
+              text: `Harmony subsetting job created successfully. Job ID: ${jobId}`,
+            },
+          ],
+          isError: false,
+        };
+      } catch (err) {
+        console.error("Error creating Harmony job:", err);
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Error connecting to Harmony: ${err instanceof Error ? err.message : String(err)}`,
+            },
+          ],
+          isError: true,
+        };
+      }
     },
   );
 
