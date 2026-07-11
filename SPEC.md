@@ -66,8 +66,8 @@ A modern, responsive, and interactive set of web views integrated into the AI as
   - [x] **Harmony Subsetter View**: Load the Harmony subsetter UI component pre-populated with the generated job ID.
 
 * **UI/Component Enhancements** (Planned):
-  - [ ] **Dataset Chooser Component**: A streamlined widget for selecting and switching between active datasets.
-  - [ ] **Output Format Component**: Elegant UI to select output formats (e.g. NetCDF), select granules, view estimated download sizes, and run the transformation.
+  - [x] **Dataset Chooser Component**: A streamlined widget for selecting and switching between active datasets (Completed).
+  - [x] **Output Format Component**: Elegant UI to select output formats (e.g. NetCDF), select variables, and run the transformation (Completed).
   - [ ] **Parameter Mapping**: Ensure the Data Access component accepts spatial, temporal, and other subsetting constraints.
   - [ ] **Browser-side Subsetter**: Configure the Subsetter component to handle Harmony wrangling directly in the user's browser and trigger a completion event when done.
 
@@ -97,10 +97,14 @@ A modern, responsive, and interactive set of web views integrated into the AI as
 * **Rationale**: Keep the UI framework up to date with the latest features, enhancements, and bug fixes from Skybridge, while resolving any static analysis/linting issues with type-safety updates.
 
 ### NASA Earthdata Login OAuth Integration (July 2026)
-* **Decision**: Configured Skybridge's OAuth metadata router and optional Bearer token middleware with Earthdata Login as the Identity Provider. Added a custom validation handler querying URS's `/oauth/tokens/user` endpoint.
-* **Rationale**: Enables secure user authentication. Mixed-auth routing allows discovery tools (`search-collections`, `browse-data`) to run anonymously while requiring sign-in for transformation and Harmony subsetting actions.
+* **Decision**: Configured Skybridge's OAuth metadata router and required Bearer token middleware (`requireBearerAuth`) with Earthdata Login as the Identity Provider. Added a custom validation handler querying URS's `/oauth/tokens/user` endpoint.
+* **Rationale**: Enforces global authentication. Restricting all tool access (search, browse, capabilities, subsetting) to `oauth2` and using `requireBearerAuth` ensures the user logs in once at the start of the session and all subsequent actions run with a validated token automatically.
 
 ### Harmony Subsetting Integration (July 2026)
 * **Decision**: Implemented the `create-harmony-job` tool using direct NASA Harmony OGC Coverages API requests, and registered a new view component `harmony-subsetter` using `@nasa-terra/components`'s `TerraDataSubsetter`.
 * **Rationale**: Replaces mock job IDs with real, authenticated jobs generated on behalf of the user, and loads the official subsetter component pre-populated with the Job ID and OAuth token for seamless download and status tracking.
+
+### Harmony Capabilities & Variable-First UI Flow (July 2026)
+* **Decision**: Created the `get-harmony-capabilities` tool and updated the `SearchCollections` UI detail column to render Action Tabs (Browse Files, Subset Data, Plot Data) dynamically based on collection capabilities.
+* **Rationale**: Decouples dataset exploration from subsetting details, allowing the user to browse variables, check constraints, select output formats, and create subsetting jobs with a single click.
 

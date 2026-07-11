@@ -6,16 +6,13 @@ import express, {
   type Request,
   type Response,
 } from "express";
-import {
-  McpServer,
-  mcpAuthMetadataRouter,
-  optionalBearerAuth,
-} from "skybridge/server";
+import { McpServer, requireBearerAuth } from "skybridge/server";
 import { type EarthdataAuthInfo, verifyAccessToken } from "./auth.js";
 import csp from "./csp.js";
 import { buildHarmonyUrl, parseJobId } from "./harmony.js";
 import { BrowseDataInputSchema } from "./schemas/browse-data.schema.js";
 import { CreateHarmonyJobInputSchema } from "./schemas/create-harmony-job.schema.js";
+import { GetHarmonyCapabilitiesInputSchema } from "./schemas/get-harmony-capabilities.schema.js";
 import { SearchCollectionsInputSchema } from "./schemas/search-collections.schema.js";
 
 const server = new McpServer(
@@ -24,28 +21,91 @@ const server = new McpServer(
     version: "0.0.1",
   },
   { capabilities: {} },
-)
-  .use(
-    mcpAuthMetadataRouter({
-      oauthMetadata: {
-        issuer: process.env.SERVER_URL || "http://localhost:3000",
-        authorization_endpoint: `${process.env.EARTHDATA_SERVER_URL || "https://uat.urs.earthdata.nasa.gov"}/oauth/authorize`,
-        token_endpoint: `${process.env.SERVER_URL || "http://localhost:3000"}/oauth/token`,
-        registration_endpoint: `${process.env.SERVER_URL || "http://localhost:3000"}/oauth/register`,
-        response_types_supported: ["code"],
-      },
-      resourceServerUrl: new URL(
-        `${process.env.SERVER_URL || "http://localhost:3000"}/mcp`,
-      ),
-    }),
-  )
-  .use("/mcp", optionalBearerAuth({ verifier: { verifyAccessToken } }))
+);
+
+// Helper to resolve the server origin dynamically from request headers
+const resolveOrigin = (req: Request): string => {
+  const getHeader = (key: string) => req.get(key);
+  const firstHop = (value?: string) => value?.split(",")[0]?.trim();
+  const forwardedHost = firstHop(getHeader("x-forwarded-host"));
+  if (forwardedHost) {
+    const proto = firstHop(getHeader("x-forwarded-proto")) || "https";
+    return `${proto}://${forwardedHost}`;
+  }
+  const host = getHeader("host");
+  if (host) {
+    const proto = ["127.0.0.1:", "localhost:"].some((p) => host.startsWith(p))
+      ? "http"
+      : "https";
+    return `${proto}://${host}`;
+  }
+  return `http://localhost:${process.env.PORT || "3000"}`;
+};
+
+// CORS configuration for OAuth endpoints
+server.express.use((req: Request, res: Response, next: NextFunction) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization",
+  );
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  if (req.method === "OPTIONS") {
+    res.sendStatus(200);
+    return;
+  }
+  next();
+});
+
+// Dynamic OAuth discovery endpoints
+server.express.get(
+  "/.well-known/oauth-authorization-server",
+  (req: Request, res: Response) => {
+    const origin = resolveOrigin(req);
+    res.json({
+      issuer: origin,
+      authorization_endpoint: `${process.env.EARTHDATA_SERVER_URL || "https://urs.earthdata.nasa.gov"}/oauth/authorize`,
+      token_endpoint: `${origin}/oauth/token`,
+      registration_endpoint: `${origin}/oauth/register`,
+      response_types_supported: ["code"],
+    });
+  },
+);
+
+server.express.get(
+  "/.well-known/oauth-protected-resource",
+  (req: Request, res: Response) => {
+    const origin = resolveOrigin(req);
+    res.json({
+      resource: `${origin}/mcp`,
+      authorization_servers: [origin],
+      scopes_supported: [],
+    });
+  },
+);
+
+// Dynamic requireBearerAuth middleware
+server.express.use(
+  "/mcp",
+  (req: Request, res: Response, next: NextFunction) => {
+    const origin = resolveOrigin(req);
+    const originUrl = new URL(origin);
+    requireBearerAuth({
+      verifier: { verifyAccessToken },
+      resourceMetadataUrl: new URL(
+        "/.well-known/oauth-protected-resource",
+        originUrl,
+      ).href,
+    })(req, res, next);
+  },
+);
+server
   .registerTool(
     {
       name: "browse-data",
       description: "Browse data files directly from the archive.",
       inputSchema: BrowseDataInputSchema.shape,
-      securitySchemes: [{ type: "noauth" }, { type: "oauth2" }],
+      securitySchemes: [{ type: "oauth2" }],
       annotations: {
         title: "Start browsing data",
         readOnlyHint: true,
@@ -83,7 +143,7 @@ const server = new McpServer(
       description:
         "Search NASA Earthdata collections by keyword, spatial area, and date range.",
       inputSchema: SearchCollectionsInputSchema.shape,
-      securitySchemes: [{ type: "noauth" }, { type: "oauth2" }],
+      securitySchemes: [{ type: "oauth2" }],
       annotations: {
         title: "Search Earthdata collections",
         readOnlyHint: true,
@@ -264,7 +324,7 @@ const server = new McpServer(
         content: [
           {
             type: "text",
-            text: `Found ${collectionsList.length} collections matching '${keyword}'.`,
+            text: `Found ${collectionsList.length} collections matching '${keyword}'. The user is currently viewing these collections in an interactive search UI list. DO NOT summarize, list, or write out details of these collections in your response, as that would duplicate the user interface. Simply prompt the user to choose a dataset from the UI.`,
           },
         ],
         isError: false,
@@ -391,6 +451,112 @@ const server = new McpServer(
         };
       } catch (err) {
         console.error("Error creating Harmony job:", err);
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Error connecting to Harmony: ${err instanceof Error ? err.message : String(err)}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    },
+  )
+  .registerTool(
+    {
+      name: "get-harmony-capabilities",
+      description:
+        "Retrieve the Harmony capabilities for a specific collection, including available services, output formats, and variables.",
+      inputSchema: GetHarmonyCapabilitiesInputSchema.shape,
+      securitySchemes: [{ type: "oauth2" }],
+      annotations: {
+        title: "Get Harmony Capabilities",
+        readOnlyHint: true,
+        destructiveHint: false,
+        openWorldHint: false,
+      },
+      _meta: {
+        "openai/toolInvocation/invoking":
+          "🔍 Retrieving Harmony dataset capabilities...",
+        "openai/toolInvocation/invoked":
+          "Harmony capabilities retrieved successfully.",
+      },
+    },
+    async ({ conceptId }, extra) => {
+      const authInfo = extra.authInfo as EarthdataAuthInfo | undefined;
+      const serverUrl =
+        process.env.EARTHDATA_SERVER_URL || "https://urs.earthdata.nasa.gov";
+      const harmonyBaseUrl =
+        process.env.HARMONY_SERVER_URL ||
+        (serverUrl.includes("uat")
+          ? "https://harmony.uat.earthdata.nasa.gov"
+          : "https://harmony.earthdata.nasa.gov");
+
+      const capabilitiesUrl = `${harmonyBaseUrl}/capabilities?collectionId=${encodeURIComponent(conceptId)}&version=3`;
+
+      try {
+        console.log("Fetching Harmony capabilities:", capabilitiesUrl);
+        const headers: Record<string, string> = {};
+        if (authInfo?.token) {
+          headers.Authorization = `Bearer ${authInfo.token}`;
+        }
+
+        const res = await fetch(capabilitiesUrl, {
+          method: "GET",
+          headers,
+        });
+
+        if (!res.ok) {
+          const errText = await res.text();
+          console.error(
+            "Harmony capabilities request failed:",
+            res.status,
+            errText,
+          );
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Failed to retrieve Harmony capabilities. Status: ${res.status}. Error: ${errText}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+
+        const contentType = res.headers.get("content-type") || "";
+        if (!contentType.includes("application/json")) {
+          const errText = await res.text();
+          console.error(
+            "Harmony capabilities request returned non-JSON response:",
+            contentType,
+            errText.slice(0, 500),
+          );
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Failed to retrieve Harmony capabilities: Response content-type was "${contentType}". The collection may not support capabilities, or user authentication is required.`,
+              },
+            ],
+            isError: true,
+          };
+        }
+
+        const data = await res.json();
+        return {
+          structuredContent: data,
+          content: [
+            {
+              type: "text",
+              text: `Successfully retrieved Harmony capabilities for collection ${conceptId}. The capabilities are loaded in the interactive UI action card below where the user can choose variables, format, and trigger subsetting or data access. DO NOT list the variables, formats, or services in your response. Keep your message short and instruct the user to use the interactive action panel.`,
+            },
+          ],
+          isError: false,
+        };
+      } catch (err) {
+        console.error("Error retrieving Harmony capabilities:", err);
         return {
           content: [
             {

@@ -28,10 +28,94 @@ interface Collection {
   time_end?: string;
 }
 
+interface HarmonyVariable {
+  name: string;
+  longName?: string;
+  href: string;
+  units?: string;
+}
+
+interface HarmonyService {
+  name: string;
+  href: string;
+  capabilities: Record<string, unknown>;
+}
+
+interface HarmonyOutputFormat {
+  name: string;
+  mimeType: string;
+}
+
+interface HarmonyCapabilities {
+  conceptId: string;
+  shortName: string;
+  summary: {
+    subsetting: {
+      bbox: boolean;
+      dimension: boolean;
+      shape: boolean;
+      temporal: boolean;
+      variable: boolean;
+    };
+    outputFormats: HarmonyOutputFormat[];
+  };
+  services: HarmonyService[];
+  variables: HarmonyVariable[];
+}
+
 export default function SearchCollections() {
   const toolInfo = useToolInfo<"search-collections">();
   const { callTool, isPending } = useCallTool("browse-data");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const [selectedVariableId, setSelectedVariableId] = useState<string | null>(
+    null,
+  );
+  const [selectedFormat, setSelectedFormat] =
+    useState<string>("application/netcdf");
+  const [activeTab, setActiveTab] = useState<"original" | "subset" | "plot">(
+    "original",
+  );
+
+  const {
+    callTool: fetchCapabilities,
+    isPending: loadingCaps,
+    data: capabilitiesData,
+  } = useCallTool("get-harmony-capabilities");
+
+  const { callTool: triggerHarmonyJob, isPending: creatingJob } =
+    useCallTool("create-harmony-job");
+
+  const [lastFetchedId, setLastFetchedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (selectedId && lastFetchedId !== selectedId) {
+      setLastFetchedId(selectedId);
+      fetchCapabilities({ conceptId: selectedId });
+    }
+  }, [selectedId, lastFetchedId, fetchCapabilities]);
+
+  useEffect(() => {
+    if (capabilitiesData?.structuredContent) {
+      const caps = capabilitiesData.structuredContent as HarmonyCapabilities;
+      const vars = caps.variables || [];
+      if (vars.length > 0) {
+        const firstVarHref = vars[0].href || "";
+        const firstVarId = firstVarHref.split("/").pop() || null;
+        setSelectedVariableId(firstVarId);
+      }
+
+      const formats = caps.summary?.outputFormats || [];
+      const netcdfFormat = formats.find((f: HarmonyOutputFormat) =>
+        f.mimeType?.includes("netcdf"),
+      );
+      if (netcdfFormat) {
+        setSelectedFormat(netcdfFormat.mimeType);
+      } else if (formats.length > 0) {
+        setSelectedFormat(formats[0].mimeType);
+      }
+    }
+  }, [capabilitiesData]);
 
   interface SearchCollectionsOutput {
     collections?: Collection[];
@@ -308,27 +392,327 @@ export default function SearchCollections() {
                     </div>
                   </div>
 
-                  {/* Action Button */}
-                  <div className="border-t border-zinc-100 dark:border-zinc-800 pt-4 flex justify-end">
-                    <button
-                      type="button"
-                      disabled={isPending}
-                      onClick={() => handleAccess(selectedCollection)}
-                      className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-400 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:shadow-md active:scale-98 transition-all cursor-pointer"
-                    >
-                      {isPending ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          <span>Loading Subsetter...</span>
-                        </>
-                      ) : (
-                        <>
-                          <span>Access & Browse Data</span>
-                          <ArrowRight className="h-4 w-4" />
-                        </>
-                      )}
-                    </button>
-                  </div>
+                  {/* Action Tabs & Subsetting / Plotting Panel */}
+                  {selectedCollection && (
+                    <div className="border-t border-zinc-100 dark:border-zinc-800 pt-4 mt-4">
+                      <span className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block mb-2">
+                        Access Actions
+                      </span>
+
+                      {(() => {
+                        const caps = capabilitiesData?.structuredContent as
+                          | HarmonyCapabilities
+                          | undefined;
+                        const variables = caps?.variables || [];
+                        const services = caps?.services || [];
+
+                        const hasSubsetting =
+                          services.some(
+                            (s: HarmonyService) =>
+                              !s.name?.toLowerCase().includes("giovanni"),
+                          ) || caps?.summary?.subsetting?.variable;
+                        const hasGiovanni = services.some((s: HarmonyService) =>
+                          s.name?.toLowerCase().includes("giovanni"),
+                        );
+
+                        return (
+                          <>
+                            <div className="flex gap-1 bg-zinc-100 dark:bg-zinc-800/60 p-0.5 rounded-lg text-xs mb-4">
+                              <button
+                                type="button"
+                                onClick={() => setActiveTab("original")}
+                                className={`flex-1 py-1.5 px-3 rounded-md font-medium transition-all ${
+                                  activeTab === "original"
+                                    ? "bg-white dark:bg-zinc-900 shadow-xs text-indigo-600 dark:text-indigo-400"
+                                    : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+                                }`}
+                              >
+                                Browse Files
+                              </button>
+                              {hasSubsetting && (
+                                <button
+                                  type="button"
+                                  onClick={() => setActiveTab("subset")}
+                                  className={`flex-1 py-1.5 px-3 rounded-md font-medium transition-all ${
+                                    activeTab === "subset"
+                                      ? "bg-white dark:bg-zinc-900 shadow-xs text-indigo-600 dark:text-indigo-400"
+                                      : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+                                  }`}
+                                >
+                                  Subset Data
+                                </button>
+                              )}
+                              {hasGiovanni && (
+                                <button
+                                  type="button"
+                                  onClick={() => setActiveTab("plot")}
+                                  className={`flex-1 py-1.5 px-3 rounded-md font-medium transition-all ${
+                                    activeTab === "plot"
+                                      ? "bg-white dark:bg-zinc-900 shadow-xs text-indigo-600 dark:text-indigo-400"
+                                      : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+                                  }`}
+                                >
+                                  Plot Data
+                                </button>
+                              )}
+                            </div>
+
+                            {loadingCaps && (
+                              <div className="flex items-center justify-center gap-2 py-8 text-xs text-zinc-500">
+                                <Loader2 className="h-4 w-4 animate-spin text-indigo-500" />
+                                <span>Loading capabilities...</span>
+                              </div>
+                            )}
+
+                            {!loadingCaps && activeTab === "original" && (
+                              <div className="space-y-4">
+                                <p className="text-xs text-zinc-500 leading-relaxed">
+                                  Access the original dataset files directly
+                                  from the archive. You will be able to select
+                                  and download raw granules.
+                                </p>
+                                <div className="flex justify-end pt-2">
+                                  <button
+                                    type="button"
+                                    disabled={isPending}
+                                    onClick={() =>
+                                      handleAccess(selectedCollection)
+                                    }
+                                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-400 px-5 py-2.5 text-sm font-semibold text-white shadow-xs hover:shadow-md active:scale-98 transition-all cursor-pointer w-full sm:w-auto"
+                                  >
+                                    {isPending ? (
+                                      <>
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                        <span>Loading Data Access...</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <span>Browse Original Files</span>
+                                        <ArrowRight className="h-4 w-4" />
+                                      </>
+                                    )}
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+
+                            {!loadingCaps && activeTab === "subset" && (
+                              <div className="space-y-4">
+                                <div className="space-y-1.5">
+                                  <span className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block">
+                                    Select Variable of Interest
+                                  </span>
+                                  <div className="max-h-[140px] overflow-y-auto border border-zinc-200 dark:border-zinc-800 rounded-lg p-2 bg-zinc-50/50 dark:bg-zinc-900/50 space-y-1">
+                                    {variables.map((v: HarmonyVariable) => {
+                                      const varId =
+                                        v.href?.split("/").pop() || "";
+                                      const isSelected =
+                                        selectedVariableId === varId;
+                                      return (
+                                        <button
+                                          type="button"
+                                          key={varId}
+                                          onClick={() =>
+                                            setSelectedVariableId(varId)
+                                          }
+                                          className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs transition-colors flex items-center justify-between ${
+                                            isSelected
+                                              ? "bg-indigo-500/10 border border-indigo-500/30 text-indigo-600 dark:text-indigo-400 font-semibold"
+                                              : "hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-transparent text-zinc-700 dark:text-zinc-300"
+                                          }`}
+                                        >
+                                          <span>{v.name}</span>
+                                          <span className="text-[10px] text-zinc-400 truncate ml-2 max-w-[200px]">
+                                            {v.longName || v.name}
+                                          </span>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                  <label
+                                    htmlFor="format-select"
+                                    className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block"
+                                  >
+                                    Output Format
+                                  </label>
+                                  <select
+                                    id="format-select"
+                                    value={selectedFormat}
+                                    onChange={(e) =>
+                                      setSelectedFormat(e.target.value)
+                                    }
+                                    className="w-full text-xs border border-zinc-200 dark:border-zinc-800 rounded-lg p-2 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 focus:border-indigo-500 focus:outline-hidden"
+                                  >
+                                    {caps?.summary?.outputFormats?.map(
+                                      (f: HarmonyOutputFormat) => (
+                                        <option
+                                          key={f.mimeType}
+                                          value={f.mimeType}
+                                        >
+                                          {f.name} ({f.mimeType})
+                                        </option>
+                                      ),
+                                    )}
+                                  </select>
+                                </div>
+
+                                <div className="rounded-lg bg-zinc-50 dark:bg-zinc-900/60 p-3 border border-zinc-100 dark:border-zinc-800 text-[11px] text-zinc-500 space-y-1">
+                                  <span className="font-semibold text-zinc-700 dark:text-zinc-300 block mb-1">
+                                    Constraints (from search):
+                                  </span>
+                                  {query.spatialArea && (
+                                    <div>
+                                      • Spatial bounding box:{" "}
+                                      <strong>{query.spatialArea}</strong>
+                                    </div>
+                                  )}
+                                  {(query.startDate || query.endDate) && (
+                                    <div>
+                                      • Temporal bounds:{" "}
+                                      <strong>
+                                        {query.startDate
+                                          ? formatDate(query.startDate)
+                                          : "Anytime"}
+                                      </strong>{" "}
+                                      to{" "}
+                                      <strong>
+                                        {query.endDate
+                                          ? formatDate(query.endDate)
+                                          : "Anytime"}
+                                      </strong>
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="flex justify-end pt-2">
+                                  <button
+                                    type="button"
+                                    disabled={
+                                      isPending ||
+                                      creatingJob ||
+                                      !selectedVariableId
+                                    }
+                                    onClick={() => {
+                                      if (!selectedVariableId) return;
+
+                                      let bbox: number[] | undefined;
+                                      if (query.spatialWkt) {
+                                        const matches = [
+                                          ...query.spatialWkt.matchAll(
+                                            /(-?\d+\.?\d*)\s+(-?\d+\.?\d*)/g,
+                                          ),
+                                        ];
+                                        if (matches.length >= 4) {
+                                          const lons = matches.map((m) =>
+                                            Number(m[1]),
+                                          );
+                                          const lats = matches.map((m) =>
+                                            Number(m[2]),
+                                          );
+                                          bbox = [
+                                            Math.min(...lons),
+                                            Math.min(...lats),
+                                            Math.max(...lons),
+                                            Math.max(...lats),
+                                          ];
+                                        }
+                                      }
+
+                                      triggerHarmonyJob({
+                                        conceptId:
+                                          selectedCollection.concept_id,
+                                        variableEntryId: selectedVariableId,
+                                        boundingBox: bbox,
+                                        startDate: query.startDate,
+                                        endDate: query.endDate,
+                                        format: selectedFormat,
+                                      });
+                                    }}
+                                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-400 px-5 py-2.5 text-sm font-semibold text-white shadow-xs hover:shadow-md active:scale-98 transition-all cursor-pointer w-full sm:w-auto"
+                                  >
+                                    {creatingJob ? (
+                                      <>
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                        <span>Creating Subsetting Job...</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <span>Subset & Transform</span>
+                                        <ArrowRight className="h-4 w-4" />
+                                      </>
+                                    )}
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+
+                            {!loadingCaps && activeTab === "plot" && (
+                              <div className="space-y-4">
+                                <div className="space-y-1.5">
+                                  <span className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block">
+                                    Select Variable to Plot
+                                  </span>
+                                  <div className="max-h-[140px] overflow-y-auto border border-zinc-200 dark:border-zinc-800 rounded-lg p-2 bg-zinc-50/50 dark:bg-zinc-900/50 space-y-1">
+                                    {variables.map((v: HarmonyVariable) => {
+                                      const varId =
+                                        v.href?.split("/").pop() || "";
+                                      const isSelected =
+                                        selectedVariableId === varId;
+                                      return (
+                                        <button
+                                          type="button"
+                                          key={varId}
+                                          onClick={() =>
+                                            setSelectedVariableId(varId)
+                                          }
+                                          className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs transition-colors flex items-center justify-between ${
+                                            isSelected
+                                              ? "bg-indigo-500/10 border border-indigo-500/30 text-indigo-600 dark:text-indigo-400 font-semibold"
+                                              : "hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-transparent text-zinc-700 dark:text-zinc-300"
+                                          }`}
+                                        >
+                                          <span>{v.name}</span>
+                                          <span className="text-[10px] text-zinc-400 truncate ml-2 max-w-[200px]">
+                                            {v.longName || v.name}
+                                          </span>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+
+                                <p className="text-xs text-zinc-500 leading-relaxed">
+                                  Plot and visualize data using the{" "}
+                                  <strong>Giovanni</strong> averaging and
+                                  mapping service. Custom charting and map
+                                  overlays will be rendered directly inside the
+                                  chat.
+                                </p>
+
+                                <div className="flex justify-end pt-2">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      alert(
+                                        "Plotting with Giovanni (Planned visualization feature)",
+                                      )
+                                    }
+                                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 px-5 py-2.5 text-sm font-semibold text-white shadow-xs hover:shadow-md active:scale-98 transition-all cursor-pointer w-full sm:w-auto"
+                                  >
+                                    <span>Plot / Analyze Data</span>
+                                    <ArrowRight className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-center text-zinc-400 dark:text-zinc-500">
