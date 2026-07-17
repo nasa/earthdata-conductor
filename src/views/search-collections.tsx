@@ -17,6 +17,7 @@ import {
   Search,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useSendFollowUpMessage } from "skybridge/web";
 import { useCallTool, useToolInfo } from "../helpers.js";
 import TerraProvider from "./components/TerraProvider.js";
 import "@/index.css";
@@ -74,7 +75,9 @@ interface HarmonyCapabilities {
 
 export default function SearchCollections() {
   const toolInfo = useToolInfo<"search-collections">();
-  const { callTool, isPending } = useCallTool("browse-data");
+  const sendFollowUp = useSendFollowUpMessage();
+  const [isBrowsing, setIsBrowsing] = useState(false);
+  const [isSubmittingSubset, setIsSubmittingSubset] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const [selectedVariableId, setSelectedVariableId] = useState<string | null>(
@@ -91,9 +94,6 @@ export default function SearchCollections() {
     isPending: loadingCaps,
     data: capabilitiesData,
   } = useCallTool("get-harmony-capabilities");
-
-  const { callTool: triggerHarmonyJob, isPending: creatingJob } =
-    useCallTool("create-harmony-job");
 
   const [lastFetchedId, setLastFetchedId] = useState<string | null>(null);
 
@@ -154,16 +154,26 @@ export default function SearchCollections() {
     (c) => c.concept_id === selectedId,
   );
 
-  const handleAccess = (collection: Collection) => {
+  const handleAccess = async (collection: Collection) => {
     if (!collection.short_name) return;
-    callTool({
-      shortName: collection.short_name,
-      version: collection.version || "latest",
-      spatialArea: query.spatialArea,
-      spatialWkt: query.spatialWkt,
-      startDate: query.startDate,
-      endDate: query.endDate,
-    });
+    setIsBrowsing(true);
+    try {
+      const versionStr = collection.version
+        ? ` version ${collection.version}`
+        : "";
+      const spatialStr = query.spatialArea ? ` over ${query.spatialArea}` : "";
+      const dateStr =
+        query.startDate || query.endDate
+          ? ` for time range ${query.startDate || ""} to ${query.endDate || ""}`
+          : "";
+      await sendFollowUp(
+        `Please browse the original data files for collection ${collection.short_name}${versionStr}${spatialStr}${dateStr}.`,
+      );
+    } catch (err) {
+      console.error("Failed to trigger browse data view:", err);
+    } finally {
+      setIsBrowsing(false);
+    }
   };
 
   const formatDate = (dateStr?: string) => {
@@ -490,8 +500,8 @@ export default function SearchCollections() {
                                 </p>
                                 <div className="flex justify-end pt-2">
                                   <TerraButton
-                                    disabled={isPending}
-                                    loading={isPending}
+                                    disabled={isBrowsing}
+                                    loading={isBrowsing}
                                     onClick={() =>
                                       handleAccess(selectedCollection)
                                     }
@@ -605,11 +615,11 @@ export default function SearchCollections() {
                                   <div className="flex justify-end pt-2">
                                     <TerraButton
                                       disabled={
-                                        isPending ||
-                                        creatingJob ||
+                                        isBrowsing ||
+                                        isSubmittingSubset ||
                                         !selectedVariableId
                                       }
-                                      loading={creatingJob}
+                                      loading={isSubmittingSubset}
                                       onClick={() => {
                                         if (!selectedVariableId) return;
 
@@ -636,15 +646,38 @@ export default function SearchCollections() {
                                           }
                                         }
 
-                                        triggerHarmonyJob({
-                                          conceptId:
-                                            selectedCollection.concept_id,
-                                          variableEntryId: selectedVariableId,
-                                          boundingBox: bbox,
-                                          startDate: query.startDate,
-                                          endDate: query.endDate,
-                                          format: selectedFormat,
-                                        });
+                                        const handleSubmittingSubset =
+                                          async () => {
+                                            setIsSubmittingSubset(true);
+                                            try {
+                                              const bboxStr = bbox
+                                                ? ` with bounding box [${bbox.join(", ")}]`
+                                                : "";
+                                              const varStr = selectedVariableId
+                                                ? ` for variable ${selectedVariableId}`
+                                                : "";
+                                              const dateStr =
+                                                query.startDate || query.endDate
+                                                  ? ` for time range ${query.startDate || ""} to ${query.endDate || ""}`
+                                                  : "";
+                                              const formatStr = selectedFormat
+                                                ? ` in format ${selectedFormat}`
+                                                : "";
+
+                                              await sendFollowUp(
+                                                `Please create a Harmony subsetting job for collection ${selectedCollection.concept_id}${varStr}${bboxStr}${dateStr}${formatStr}.`,
+                                              );
+                                            } catch (err) {
+                                              console.error(
+                                                "Failed to submit subsetting job:",
+                                                err,
+                                              );
+                                            } finally {
+                                              setIsSubmittingSubset(false);
+                                            }
+                                          };
+
+                                        handleSubmittingSubset();
                                       }}
                                       className="w-full sm:w-auto"
                                     >

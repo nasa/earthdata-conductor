@@ -331,16 +331,89 @@ const app = server
         }
 
         console.log("Calling remote get_collections with args:", args);
-        const mcpRes = (await mcpClient.callTool({
+        let mcpRes = (await mcpClient.callTool({
           name: "get_collections",
           arguments: args,
         })) as { content?: { type: string; text: string }[] };
 
-        if (mcpRes.content?.[0] && mcpRes.content[0].type === "text") {
-          const rawText = mcpRes.content[0].text;
+        let rawText = mcpRes.content?.[0]?.text;
+        let parsed = null;
+        let hits = 0;
 
+        if (rawText) {
           try {
-            const parsed = JSON.parse(rawText);
+            parsed = JSON.parse(rawText);
+            const collections =
+              parsed.collections ??
+              (Array.isArray(parsed) ? parsed : (parsed.results ?? []));
+            hits = collections.length ?? parsed.total_hits ?? 0;
+          } catch (_e) {
+            // ignore initial parse error, retry might succeed
+          }
+        }
+
+        // Fallback: If 0 results, try to extract science keywords
+        if (hits === 0 && keyword.length > 15) {
+          const lowerKeyword = keyword.toLowerCase();
+          let fallbackKeyword = "";
+          if (
+            lowerKeyword.includes("wind speed") ||
+            lowerKeyword.includes("wind")
+          ) {
+            fallbackKeyword = "wind speed";
+          } else if (
+            lowerKeyword.includes("precipitation") ||
+            lowerKeyword.includes("rain") ||
+            lowerKeyword.includes("snow")
+          ) {
+            fallbackKeyword = "precipitation";
+          } else if (
+            lowerKeyword.includes("temperature") ||
+            lowerKeyword.includes("heat") ||
+            lowerKeyword.includes("cold")
+          ) {
+            fallbackKeyword = "temperature";
+          } else if (
+            lowerKeyword.includes("soil moisture") ||
+            lowerKeyword.includes("soil")
+          ) {
+            fallbackKeyword = "soil moisture";
+          } else if (
+            lowerKeyword.includes("sea surface temperature") ||
+            lowerKeyword.includes("sst")
+          ) {
+            fallbackKeyword = "sea surface temperature";
+          } else {
+            // Just take the first two words as a general fallback
+            const words = keyword.split(/\s+/).filter((w) => w.length > 3);
+            if (words.length > 0) {
+              fallbackKeyword = words.slice(0, 2).join(" ");
+            }
+          }
+
+          if (fallbackKeyword && fallbackKeyword !== keyword) {
+            console.log(
+              `Initial search returned 0 results. Retrying with fallback keyword: '${fallbackKeyword}'`,
+            );
+            args.keyword = fallbackKeyword;
+            mcpRes = (await mcpClient.callTool({
+              name: "get_collections",
+              arguments: args,
+            })) as { content?: { type: string; text: string }[] };
+            rawText = mcpRes.content?.[0]?.text;
+            parsed = null;
+            if (rawText) {
+              try {
+                parsed = JSON.parse(rawText);
+              } catch (parseErr) {
+                console.error("Failed to parse fallback response:", parseErr);
+              }
+            }
+          }
+        }
+
+        if (rawText && parsed) {
+          try {
             if (Array.isArray(parsed)) {
               collectionsList = parsed;
             } else if (
@@ -376,7 +449,7 @@ const app = server
           );
           const checks = collectionsList.map(async (c) => {
             const conceptId = c.concept_id as string;
-            if (!conceptId) return null;
+            if (!conceptId) return { ...c, granule_count: 0 };
 
             try {
               const granArgs: Record<string, unknown> = {
@@ -407,26 +480,17 @@ const app = server
                 totalHits = parsedGran.total_hits ?? 0;
               }
 
-              if (totalHits > 0) {
-                return { ...c, granule_count: totalHits };
-              }
-              console.log(
-                `Filtering out collection '${conceptId}' because it has 0 granules in the date range.`,
-              );
-              return null;
+              return { ...c, granule_count: totalHits };
             } catch (err) {
               console.error(
                 `Failed to check granules for collection ${conceptId}:`,
                 err,
               );
-              return c;
+              return { ...c, granule_count: 0 };
             }
           });
 
-          const results = await Promise.all(checks);
-          collectionsList = results.filter(
-            (item): item is Record<string, unknown> => item !== null,
-          );
+          collectionsList = await Promise.all(checks);
         }
       } catch (mcpErr) {
         console.error("Error communicating with Earthdata MCP UAT:", mcpErr);

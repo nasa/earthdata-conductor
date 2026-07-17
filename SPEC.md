@@ -119,3 +119,11 @@ A modern, responsive, and interactive set of web views integrated into the AI as
 * **Decision**: Added support for the `AUTH_TOKEN` environment variable override. When defined, all registered tools omit `oauth2` from their security schemes, and the `/mcp` middleware automatically bypasses standard token verification to inject a mock auth context using that static token.
 * **Rationale**: Simplifies development and debugging in local environments by making OAuth sign-in optional, allowing direct test requests to execute with the configured static Bearer token.
 
+### Client-Triggered Follow-Up Message Navigation (July 2026)
+* **Decision**: Refactored the interactive buttons in the `search-collections` view (Browse Original Files and Subset & Transform) to use `useSendFollowUpMessage` instead of calling `useCallTool` directly.
+* **Rationale**: Bypasses the MCP host iframe isolation by programmatically asking the LLM to invoke the corresponding view-enabled tools, ensuring that the host chat client successfully transitions the user to the `browse-data` and `harmony-subsetter` views.
+
+### Server-Side Keyword Fallback & Granule Filtering Relaxing (July 2026)
+* **Decision**: Implemented an automatic keyword extraction fallback in the `search-collections` tool and modified the granule availability check to assign `granule_count: 0` instead of filtering out collections with empty subsets.
+* **Rationale**: Prevents zero-result search displays in sparse test environments like UAT, allowing users to find datasets even when entering long conversational queries or select temporal ranges for which no granules are currently archived.
+
