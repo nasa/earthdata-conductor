@@ -256,7 +256,14 @@ export default function SearchCollections() {
         </div>
 
         {/* Content area: Grid listing and details panel */}
-        {error ? (
+        {output === undefined ? (
+          <div className="flex flex-col items-center justify-center gap-3 py-24">
+            <TerraLoader indeterminate />
+            <span className="text-sm text-zinc-500 font-medium animate-pulse">
+              Searching NASA CMR collections archive...
+            </span>
+          </div>
+        ) : error ? (
           <div className="p-10 text-center">
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600 dark:bg-red-950/50 dark:text-red-400">
               <Info className="h-6 w-6" />
@@ -454,7 +461,9 @@ export default function SearchCollections() {
                           rawVariables,
                         );
                         const variables = [
-                          ...recommended.filter((v) => v.isRecommended),
+                          ...recommended
+                            .filter((v) => v.isRecommended)
+                            .sort((a, b) => b.score - a.score),
                           ...recommended.filter((v) => !v.isRecommended),
                         ];
                         const services = caps?.services || [];

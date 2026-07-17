@@ -87,4 +87,16 @@ describe("getRecommendations helper function", () => {
       "Matches 'unrelated' directly from your query",
     );
   });
+
+  it("should score wind speed higher than humidity when wind is mentioned in the query", () => {
+    const results = getRecommendations(
+      "Hurricane Melissa wind speed track Jamaica",
+      dummyVariables,
+    );
+    const speedVar = results.find((r) => r.name === "SPEED");
+    const qvVar = results.find((r) => r.name === "QV2M");
+
+    expect(speedVar?.isRecommended).toBe(true);
+    expect(speedVar?.score).toBeGreaterThan(qvVar?.score || 0);
+  });
 });

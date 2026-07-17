@@ -8,6 +8,7 @@ interface HarmonyVariable {
 export interface RecommendedVariable extends HarmonyVariable {
   isRecommended: boolean;
   reason?: string;
+  score: number;
 }
 
 export const getRecommendations = (
@@ -15,7 +16,11 @@ export const getRecommendations = (
   variables: HarmonyVariable[],
 ): RecommendedVariable[] => {
   if (!keyword || !variables?.length) {
-    return (variables || []).map((v) => ({ ...v, isRecommended: false }));
+    return (variables || []).map((v) => ({
+      ...v,
+      isRecommended: false,
+      score: 0,
+    }));
   }
 
   const lowerKeyword = keyword.toLowerCase();
@@ -112,6 +117,9 @@ export const getRecommendations = (
     const varName = v.name.toLowerCase();
     const varLong = (v.longName || "").toLowerCase();
 
+    let score = 0;
+    let reason = "";
+
     // 1. Category matching (preferred for context-aware reasons)
     for (const cat of activeCategories) {
       if (
@@ -119,27 +127,33 @@ export const getRecommendations = (
           (term) => varName.includes(term) || varLong.includes(term),
         )
       ) {
-        return {
-          ...v,
-          isRecommended: true,
-          reason: cat.reason,
-        };
+        // Count total occurrences of searchTerms in lowerKeyword
+        const matchCount = cat.searchTerms.reduce((count, term) => {
+          const occurrences = lowerKeyword.split(term).length - 1;
+          return count + occurrences;
+        }, 0);
+
+        score += matchCount * 10;
+        reason = cat.reason;
       }
     }
 
     // 2. Direct word overlap check (fallback for exact word matches)
     const keywordWords = lowerKeyword.split(/\s+/).filter((w) => w.length > 3);
-    const directMatch = keywordWords.find(
-      (word) => varName.includes(word) || varLong.includes(word),
-    );
-    if (directMatch) {
-      return {
-        ...v,
-        isRecommended: true,
-        reason: `Matches '${directMatch}' directly from your query`,
-      };
+    for (const word of keywordWords) {
+      if (varName.includes(word) || varLong.includes(word)) {
+        score += 2;
+        if (!reason) {
+          reason = `Matches '${word}' directly from your query`;
+        }
+      }
     }
 
-    return { ...v, isRecommended: false };
+    return {
+      ...v,
+      isRecommended: score > 0,
+      reason: reason || undefined,
+      score,
+    };
   });
 };
