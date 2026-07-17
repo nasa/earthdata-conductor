@@ -92,6 +92,23 @@ server.express.get(
 server.express.use(
   "/mcp",
   (req: Request, res: Response, next: NextFunction) => {
+    if (process.env.AUTH_TOKEN) {
+      (req as Request & { auth?: unknown }).auth = {
+        token: process.env.AUTH_TOKEN,
+        clientId: process.env.EARTHDATA_CLIENT_ID || "mock-client-id",
+        scopes: [],
+        expiresAt: Math.floor(Date.now() / 1000) + 3600 * 24 * 365, // 1 year expiry
+        extra: {
+          uid: "localdev",
+          first_name: "Local",
+          last_name: "Dev",
+          email_address: "localdev@earthdata.nasa.gov",
+        },
+      };
+      next();
+      return;
+    }
+
     const origin = resolveOrigin(req);
     const originUrl = new URL(origin);
     requireBearerAuth({
@@ -103,13 +120,18 @@ server.express.use(
     })(req, res, next);
   },
 );
+
+const securitySchemes = process.env.AUTH_TOKEN
+  ? []
+  : [{ type: "oauth2" as const }];
+
 const app = server
   .registerTool(
     {
       name: "browse-data",
       description: "Browse data files directly from the archive.",
       inputSchema: BrowseDataInputSchema.shape,
-      securitySchemes: [{ type: "oauth2" }],
+      securitySchemes,
       annotations: {
         title: "Start browsing data",
         readOnlyHint: true,
@@ -190,7 +212,7 @@ const app = server
       description:
         "Search NASA Earthdata collections by keyword, spatial area, and date range.",
       inputSchema: SearchCollectionsInputSchema.shape,
-      securitySchemes: [{ type: "oauth2" }],
+      securitySchemes,
       annotations: {
         title: "Search Earthdata collections",
         readOnlyHint: true,
@@ -447,7 +469,7 @@ const app = server
       description:
         "Create a Harmony subsetting job on behalf of the user to generate a job ID.",
       inputSchema: CreateHarmonyJobInputSchema.shape,
-      securitySchemes: [{ type: "oauth2" }],
+      securitySchemes,
       annotations: {
         title: "Create Harmony Subsetting Job",
         readOnlyHint: false,
@@ -580,7 +602,7 @@ const app = server
       description:
         "Retrieve the Harmony capabilities for a specific collection, including available services, output formats, and variables.",
       inputSchema: GetHarmonyCapabilitiesInputSchema.shape,
-      securitySchemes: [{ type: "oauth2" }],
+      securitySchemes,
       annotations: {
         title: "Get Harmony Capabilities",
         readOnlyHint: true,

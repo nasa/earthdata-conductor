@@ -1,5 +1,8 @@
 import { LatLngBounds } from "@nasa-terra/components/dist/components/map/models/LatLngBounds.js";
-import { MapEventType, type MapEventDetail } from "@nasa-terra/components/dist/components/map/type.js";
+import {
+  type MapEventDetail,
+  MapEventType,
+} from "@nasa-terra/components/dist/components/map/type.js";
 import TerraDataAccess from "@nasa-terra/components/dist/react/data-access/index.js";
 import { useToolInfo } from "../helpers.js";
 import TerraProvider from "./components/TerraProvider.js";

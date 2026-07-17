@@ -114,3 +114,8 @@ A modern, responsive, and interactive set of web views integrated into the AI as
 ### Data Access Parameter Mapping with LatLngBounds (July 2026)
 * **Decision**: Mapped `startDate`, `endDate`, and parsed geographic bounding box coordinates (as `LatLngBounds`) to the `<TerraDataAccess>` `searchParams` property in the React `browse-data` view.
 * **Rationale**: Resolves empty file list displays by pre-filtering granule queries to the user's actual area of interest and selected timeframe.
+
+### Optional Authentication for Local Development (July 2026)
+* **Decision**: Added support for the `AUTH_TOKEN` environment variable override. When defined, all registered tools omit `oauth2` from their security schemes, and the `/mcp` middleware automatically bypasses standard token verification to inject a mock auth context using that static token.
+* **Rationale**: Simplifies development and debugging in local environments by making OAuth sign-in optional, allowing direct test requests to execute with the configured static Bearer token.
+

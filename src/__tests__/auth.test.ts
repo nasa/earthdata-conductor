@@ -99,4 +99,35 @@ describe("verifyAccessToken", () => {
       InvalidTokenError,
     );
   });
+
+  it("should bypass verification if AUTH_TOKEN matches token", async () => {
+    process.env.AUTH_TOKEN = "local-dev-token";
+    const result = await verifyAccessToken("local-dev-token");
+
+    expect(result).toEqual({
+      token: "local-dev-token",
+      clientId: "mock-client-id",
+      scopes: [],
+      expiresAt: expect.any(Number),
+      extra: {
+        uid: "localdev",
+        first_name: "Local",
+        last_name: "Dev",
+        email_address: "localdev@earthdata.nasa.gov",
+      },
+    });
+    // Ensure fetch was not called
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("should bypass verification and not throw on missing client credentials if AUTH_TOKEN matches token", async () => {
+    process.env.AUTH_TOKEN = "local-dev-token";
+    delete process.env.EARTHDATA_CLIENT_ID;
+    delete process.env.EARTHDATA_CLIENT_SECRET;
+
+    const result = await verifyAccessToken("local-dev-token");
+
+    expect(result.clientId).toBe("mock-client-id");
+    expect(fetch).not.toHaveBeenCalled();
+  });
 });

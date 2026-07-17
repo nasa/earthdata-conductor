@@ -4,6 +4,7 @@ import TerraCard from "@nasa-terra/components/dist/react/card/index.js";
 import TerraLoader from "@nasa-terra/components/dist/react/loader/index.js";
 import TerraTab from "@nasa-terra/components/dist/react/tab/index.js";
 import TerraTabPanel from "@nasa-terra/components/dist/react/tab-panel/index.js";
+import type { TerraTabShowEvent } from "@nasa-terra/components/dist/react/tabs/index.js";
 import TerraTabs from "@nasa-terra/components/dist/react/tabs/index.js";
 import TerraTag from "@nasa-terra/components/dist/react/tag/index.js";
 import {
@@ -18,7 +19,6 @@ import {
 import { useEffect, useState } from "react";
 import { useCallTool, useToolInfo } from "../helpers.js";
 import TerraProvider from "./components/TerraProvider.js";
-import type { TerraTabShowEvent } from "@nasa-terra/components/dist/react/tabs/index.js";
 import "@/index.css";
 
 interface Collection {
@@ -106,7 +106,8 @@ export default function SearchCollections() {
 
   useEffect(() => {
     if (capabilitiesData?.structuredContent) {
-      const caps = capabilitiesData.structuredContent as unknown as HarmonyCapabilities;
+      const caps =
+        capabilitiesData.structuredContent as unknown as HarmonyCapabilities;
       const vars = caps.variables || [];
       if (vars.length > 0) {
         const firstVarHref = vars[0].href || "";
@@ -446,7 +447,9 @@ export default function SearchCollections() {
                         ) : (
                           <TerraTabs
                             onTerraTabShow={(e: TerraTabShowEvent) =>
-                              setActiveTab(e.detail.name as "original" | "subset" | "plot")
+                              setActiveTab(
+                                e.detail.name as "original" | "subset" | "plot",
+                              )
                             }
                           >
                             <TerraTab
