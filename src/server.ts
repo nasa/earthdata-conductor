@@ -530,7 +530,7 @@ This search failed because the keyword search term is likely too specific (e.g. 
 Please try the following:
 1. Re-analyze the user's request, identify the underlying physical phenomenon they want to study (e.g. 'wind speed' for a hurricane, 'precipitation' for a flood/drought, 'temperature' for a heatwave/wildfire, 'soil moisture' for agriculture).
 2. Call 'search-collections' again automatically with a broad scientific keyword (e.g. 'wind speed', 'air temperature', or 'precipitation') while keeping the spatial bounding box and date ranges. Do not ask the user for permission; just run the improved query immediately.
-3. If you are unsure, present a friendly message to the user explaining that NASA datasets are organized by scientific variables, and offer a list of scientific variables to search for instead.`,
+3. If you have already retried the search once and still got 0 results, DO NOT retry again. Instead, present a friendly message to the user explaining that NASA datasets are organized by scientific variables, and offer a list of scientific variables to search for instead.`,
             },
           ],
           isError: false,
