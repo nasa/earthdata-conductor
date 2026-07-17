@@ -512,6 +512,31 @@ const app = server
         }
       }
 
+      if (collectionsList.length === 0) {
+        return {
+          structuredContent: {
+            query: { keyword, spatialArea, spatialWkt, startDate, endDate },
+            collections: [],
+            error: "No collections found matching the keyword.",
+          },
+          content: [
+            {
+              type: "text",
+              text: `Search for '${keyword}' returned 0 collections.
+
+IMPORTANT GUIDANCE FOR THE ASSISTANT:
+This search failed because the keyword search term is likely too specific (e.g. it contains event names like 'Hurricane Melissa', 'LA wildfires' or locations like 'Jamaica', 'Southern California'). NASA Earthdata collections are indexed by scientific physical measurements (e.g. 'wind speed', 'precipitation', 'temperature', 'humidity', 'soil moisture'), NOT by storm names or disaster events.
+
+Please try the following:
+1. Re-analyze the user's request, identify the underlying physical phenomenon they want to study (e.g. 'wind speed' for a hurricane, 'precipitation' for a flood/drought, 'temperature' for a heatwave/wildfire, 'soil moisture' for agriculture).
+2. Call 'search-collections' again automatically with a broad scientific keyword (e.g. 'wind speed', 'air temperature', or 'precipitation') while keeping the spatial bounding box and date ranges. Do not ask the user for permission; just run the improved query immediately.
+3. If you are unsure, present a friendly message to the user explaining that NASA datasets are organized by scientific variables, and offer a list of scientific variables to search for instead.`,
+            },
+          ],
+          isError: false,
+        };
+      }
+
       return {
         structuredContent: {
           query: { keyword, spatialArea, spatialWkt, startDate, endDate },
