@@ -250,8 +250,8 @@ const app = server
       // Developer/demo features override
       if (process.env.ENABLE_DEV_FEATURES === "true") {
         const isJamaicaQuery =
-          (spatialArea && spatialArea.toLowerCase().includes("jamaica")) ||
-          (keyword && keyword.toLowerCase().includes("jamaica"));
+          spatialArea?.toLowerCase().includes("jamaica") ||
+          keyword?.toLowerCase().includes("jamaica");
 
         if (isJamaicaQuery) {
           console.log(
@@ -842,9 +842,13 @@ Please try the following:
         csp,
       },
     },
-    async (params) => {
+    async (params, extra) => {
+      const authInfo = extra.authInfo as EarthdataAuthInfo | undefined;
       return {
-        structuredContent: params,
+        structuredContent: {
+          ...params,
+          bearerToken: authInfo?.token,
+        },
         content: [
           {
             type: "text",
@@ -880,9 +884,13 @@ Please try the following:
         csp,
       },
     },
-    async (params) => {
+    async (params, extra) => {
+      const authInfo = extra.authInfo as EarthdataAuthInfo | undefined;
       return {
-        structuredContent: params,
+        structuredContent: {
+          ...params,
+          bearerToken: authInfo?.token,
+        },
         content: [
           {
             type: "text",
