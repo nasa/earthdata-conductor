@@ -16,7 +16,6 @@ declare module "react" {
   }
 }
 
-
 export default function TimeAveragedMapView() {
   const toolInfo = useToolInfo<"show-time-averaged-map">();
   const input = (toolInfo.input || {}) as TimeAveragedMapInput;

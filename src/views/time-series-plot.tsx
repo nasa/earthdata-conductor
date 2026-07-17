@@ -16,7 +16,6 @@ declare module "react" {
   }
 }
 
-
 export default function TimeSeriesPlotView() {
   const toolInfo = useToolInfo<"show-time-series-plot">();
   const input = (toolInfo.input || {}) as TimeSeriesPlotInput;
