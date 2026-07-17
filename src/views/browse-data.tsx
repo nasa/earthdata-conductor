@@ -1,4 +1,5 @@
 import { LatLngBounds } from "@nasa-terra/components/dist/components/map/models/LatLngBounds.js";
+import { MapEventType, type MapEventDetail } from "@nasa-terra/components/dist/components/map/type.js";
 import TerraDataAccess from "@nasa-terra/components/dist/react/data-access/index.js";
 import { useToolInfo } from "../helpers.js";
 import TerraProvider from "./components/TerraProvider.js";
@@ -39,11 +40,11 @@ export default function BrowseData() {
     startDate: toolInfo.input?.startDate || undefined,
     endDate: toolInfo.input?.endDate || undefined,
     location: bbox
-      ? {
-          type: "bbox" as const,
+      ? ({
+          type: MapEventType.BBOX,
           bounds: new LatLngBounds(bbox),
           cause: "search",
-        }
+        } as MapEventDetail)
       : null,
   };
 

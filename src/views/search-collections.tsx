@@ -18,6 +18,7 @@ import {
 import { useEffect, useState } from "react";
 import { useCallTool, useToolInfo } from "../helpers.js";
 import TerraProvider from "./components/TerraProvider.js";
+import type { TerraTabShowEvent } from "@nasa-terra/components/dist/react/tabs/index.js";
 import "@/index.css";
 
 interface Collection {
@@ -105,7 +106,7 @@ export default function SearchCollections() {
 
   useEffect(() => {
     if (capabilitiesData?.structuredContent) {
-      const caps = capabilitiesData.structuredContent as HarmonyCapabilities;
+      const caps = capabilitiesData.structuredContent as unknown as HarmonyCapabilities;
       const vars = caps.variables || [];
       if (vars.length > 0) {
         const firstVarHref = vars[0].href || "";
@@ -180,20 +181,18 @@ export default function SearchCollections() {
   return (
     <TerraProvider>
       <div className="mx-auto w-full max-w-5xl rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50 overflow-hidden shadow-xl">
-        {/* Header section with glassmorphic style and gradient accent */}
-        <div className="relative overflow-hidden border-b border-zinc-200 dark:border-zinc-800 bg-linear-to-r from-indigo-50/50 via-white to-cyan-50/50 dark:from-indigo-950/20 dark:via-zinc-950 dark:to-cyan-950/20 p-6">
-          <div className="absolute top-0 left-0 h-[3px] w-full bg-linear-to-r from-indigo-500 via-purple-500 to-cyan-500" />
+        {/* Header section with minimalistic Terra UI style */}
+        <div className="relative border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
-              <Compass className="h-6 w-6 animate-pulse" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400">
+              <Compass className="h-6 w-6" />
             </div>
             <div>
               <h2 className="text-xl font-bold tracking-tight">
-                Dataset Discovery
+                Dataset Search Results
               </h2>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                Explore and select NASA Earth science datasets matching your
-                interest.
+                Select from matching NASA Earth science collections below.
               </p>
             </div>
           </div>
@@ -202,7 +201,7 @@ export default function SearchCollections() {
           <div className="mt-4 flex flex-wrap gap-2">
             <TerraTag variant="content" size="small">
               <span className="flex items-center gap-1">
-                <Search className="h-3.5 w-3.5 text-indigo-500" />
+                <Search className="h-3.5 w-3.5 text-blue-600" />
                 Keyword: <strong>{query.keyword || "N/A"}</strong>
               </span>
             </TerraTag>
@@ -275,8 +274,8 @@ export default function SearchCollections() {
                     <TerraCard
                       className={`block w-full transition-all duration-200 ${
                         isSelected
-                          ? "[--border-color:var(--color-indigo-500)] bg-indigo-50/10 dark:bg-indigo-950/5 shadow-md"
-                          : "hover:[--border-color:var(--color-indigo-300)] hover:shadow-xs"
+                          ? "[--border-color:var(--color-blue-600)] bg-blue-50/10 dark:bg-blue-950/5 shadow-xs"
+                          : "hover:[--border-color:var(--color-blue-300)] hover:shadow-xs"
                       }`}
                     >
                       <div className="flex justify-between items-start gap-2">
@@ -299,7 +298,7 @@ export default function SearchCollections() {
                       <h4
                         className={`text-xs font-semibold mt-2 line-clamp-2 transition-colors ${
                           isSelected
-                            ? "text-indigo-600 dark:text-indigo-400 font-bold"
+                            ? "text-blue-600 dark:text-blue-400 font-bold"
                             : "text-zinc-800 dark:text-zinc-200"
                         }`}
                       >
@@ -344,7 +343,7 @@ export default function SearchCollections() {
                       <h3 className="text-base font-bold text-zinc-800 dark:text-zinc-100 leading-snug">
                         {selectedCollection.entry_title}
                       </h3>
-                      <div className="text-xs font-mono text-indigo-600 dark:text-indigo-400 font-bold mt-1">
+                      <div className="text-xs font-mono text-blue-600 dark:text-blue-400 font-bold mt-1">
                         {selectedCollection.short_name} v
                         {selectedCollection.version || "1.0"}
                       </div>
@@ -446,11 +445,9 @@ export default function SearchCollections() {
                           </div>
                         ) : (
                           <TerraTabs
-                            onTerraTabShow={(
-                              e: CustomEvent<{
-                                name: "original" | "subset" | "plot";
-                              }>,
-                            ) => setActiveTab(e.detail.name)}
+                            onTerraTabShow={(e: TerraTabShowEvent) =>
+                              setActiveTab(e.detail.name as "original" | "subset" | "plot")
+                            }
                           >
                             <TerraTab
                               slot="nav"
@@ -532,7 +529,7 @@ export default function SearchCollections() {
                                             }
                                             className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs transition-colors flex items-center justify-between ${
                                               isSelected
-                                                ? "bg-indigo-500/10 border border-indigo-500/30 text-indigo-600 dark:text-indigo-400 font-semibold"
+                                                ? "bg-blue-500/10 border border-blue-500/30 text-blue-600 dark:text-blue-400 font-semibold"
                                                 : "hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-transparent text-zinc-700 dark:text-zinc-300"
                                             }`}
                                           >
@@ -559,7 +556,7 @@ export default function SearchCollections() {
                                       onChange={(e) =>
                                         setSelectedFormat(e.target.value)
                                       }
-                                      className="w-full text-xs border border-zinc-200 dark:border-zinc-800 rounded-lg p-2 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 focus:border-indigo-500 focus:outline-hidden"
+                                      className="w-full text-xs border border-zinc-200 dark:border-zinc-800 rounded-lg p-2 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 focus:border-blue-600 focus:outline-hidden"
                                     >
                                       {caps?.summary?.outputFormats?.map(
                                         (f: HarmonyOutputFormat) => (
@@ -684,7 +681,7 @@ export default function SearchCollections() {
                                             }
                                             className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs transition-colors flex items-center justify-between ${
                                               isSelected
-                                                ? "bg-indigo-500/10 border border-indigo-500/30 text-indigo-600 dark:text-indigo-400 font-semibold"
+                                                ? "bg-blue-500/10 border border-blue-500/30 text-blue-600 dark:text-blue-400 font-semibold"
                                                 : "hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-transparent text-zinc-700 dark:text-zinc-300"
                                             }`}
                                           >

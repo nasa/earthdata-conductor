@@ -103,7 +103,7 @@ server.express.use(
     })(req, res, next);
   },
 );
-server
+const app = server
   .registerTool(
     {
       name: "browse-data",
@@ -806,6 +806,6 @@ server.express.post("/oauth/register", (req: Request, res: Response) => {
   });
 });
 
-export default await server.run();
+export default await app.run();
 
-export type AppType = typeof server;
+export type AppType = typeof app;
