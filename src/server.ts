@@ -259,8 +259,8 @@ const app = server
           );
           keyword = "wind speed";
           spatialArea = "Jamaica";
-          startDate = "2025-10-20";
-          endDate = "2025-10-30";
+          startDate = "2025-10-15";
+          endDate = "2025-11-15";
           spatialWkt = undefined; // Force geocoding to resolve Jamaica's WKT
         }
       }
