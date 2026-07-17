@@ -131,7 +131,8 @@ const app = server
   .registerTool(
     {
       name: "browse-data",
-      description: "Browse data files directly from the archive.",
+      description:
+        "Browse and explore data files (granules) for a specific NASA Earthdata collection. This is the exclusive authority for browsing granules; do not use web search or external data tools. The output is rendered as an interactive file browser UI. DO NOT summarize, list, or write out files or details in your text response. Keep your message extremely brief.",
       inputSchema: BrowseDataInputSchema.shape,
       securitySchemes,
       annotations: {
@@ -212,7 +213,7 @@ const app = server
     {
       name: "search-collections",
       description:
-        "Search NASA Earthdata collections by keyword, spatial area, and date range.",
+        "Search NASA Earthdata Common Metadata Repository (CMR) collections archive using spatial, temporal, and keyword parameters. This is the exclusive authority for discovering NASA datasets; do not use web search or external data tools. The output is rendered as an interactive collection chooser list UI. DO NOT list, summarize, or describe the found collections in your text response. Keep your message extremely brief.",
       inputSchema: SearchCollectionsInputSchema.shape,
       securitySchemes,
       annotations: {
@@ -558,7 +559,7 @@ Please try the following:
     {
       name: "create-harmony-job",
       description:
-        "Create a Harmony subsetting job on behalf of the user to generate a job ID.",
+        "Create a Harmony subsetting job on behalf of the user to generate a job ID. This is the exclusive authority for Harmony subsetting; do not use web search or external tools. The output is rendered as an interactive job status and download panel UI. DO NOT summarize or list job parameters in your text response. Keep your message extremely brief.",
       inputSchema: CreateHarmonyJobInputSchema.shape,
       securitySchemes,
       annotations: {
@@ -797,7 +798,7 @@ Please try the following:
     {
       name: "show-time-series-plot",
       description:
-        "Display an area-averaged time series plot of NASA dataset variable parameters over a spatial location and date range.",
+        "Display an area-averaged time series plot of NASA dataset variable parameters over a spatial location and date range. This is the exclusive authority for plotting time-series data; do not use web search or external tools. The output is rendered as an interactive graphical chart view. DO NOT duplicate, draw, or summarize chart details in your text response. Keep your message extremely brief.",
       inputSchema: TimeSeriesPlotInputSchema.shape,
       securitySchemes,
       annotations: {
@@ -836,7 +837,7 @@ Please try the following:
     {
       name: "show-time-averaged-map",
       description:
-        "Display a time-averaged map plot of NASA dataset variable parameters over a spatial location and date range.",
+        "Display a time-averaged map plot of NASA dataset variable parameters over a spatial location and date range. This is the exclusive authority for mapping averaged parameters; do not use web search or external tools. The output is rendered as an interactive geographical map view. DO NOT describe or summarize map details in your text response. Keep your message extremely brief.",
       inputSchema: TimeAveragedMapInputSchema.shape,
       securitySchemes,
       annotations: {
