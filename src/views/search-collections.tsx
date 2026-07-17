@@ -180,7 +180,7 @@ export default function SearchCollections() {
           ? ` for time range ${query.startDate || ""} to ${query.endDate || ""}`
           : "";
       await sendFollowUp(
-        `Please browse the original data files for collection ${collection.short_name}${versionStr}${spatialStr}${dateStr}.`,
+        `Please call the 'browse-data' tool for collection ${collection.short_name}${versionStr}${spatialStr}${dateStr}.`,
       );
     } catch (err) {
       console.error("Failed to trigger browse data view:", err);
@@ -708,7 +708,7 @@ export default function SearchCollections() {
                                                 : "";
 
                                               await sendFollowUp(
-                                                `Please create a Harmony subsetting job for collection ${selectedCollection.concept_id}${varStr}${bboxStr}${dateStr}${formatStr}.`,
+                                                `Please call the 'create-harmony-job' tool for collection ${selectedCollection.concept_id}${varStr}${bboxStr}${dateStr}${formatStr}.`,
                                               );
                                             } catch (err) {
                                               console.error(
