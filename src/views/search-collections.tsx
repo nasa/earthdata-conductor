@@ -19,6 +19,10 @@ import {
 import { useEffect, useState } from "react";
 import { useSendFollowUpMessage } from "skybridge/web";
 import { useCallTool, useToolInfo } from "../helpers.js";
+import {
+  getRecommendations,
+  type RecommendedVariable,
+} from "../utils/recommendations.js";
 import TerraProvider from "./components/TerraProvider.js";
 import "@/index.css";
 
@@ -75,6 +79,20 @@ interface HarmonyCapabilities {
 
 export default function SearchCollections() {
   const toolInfo = useToolInfo<"search-collections">();
+
+  interface SearchCollectionsOutput {
+    collections?: Collection[];
+    error?: string;
+  }
+
+  const query = (toolInfo.input || {}) as {
+    keyword?: string;
+    spatialArea?: string;
+    spatialWkt?: string;
+    startDate?: string;
+    endDate?: string;
+  };
+
   const sendFollowUp = useSendFollowUpMessage();
   const [isBrowsing, setIsBrowsing] = useState(false);
   const [isSubmittingSubset, setIsSubmittingSubset] = useState(false);
@@ -110,9 +128,16 @@ export default function SearchCollections() {
         capabilitiesData.structuredContent as unknown as HarmonyCapabilities;
       const vars = caps.variables || [];
       if (vars.length > 0) {
-        const firstVarHref = vars[0].href || "";
-        const firstVarId = firstVarHref.split("/").pop() || null;
-        setSelectedVariableId(firstVarId);
+        const recommended = getRecommendations(query.keyword || "", vars);
+        const topRec = recommended.find((v) => v.isRecommended);
+        if (topRec) {
+          const varId = topRec.href.split("/").pop() || null;
+          setSelectedVariableId(varId);
+        } else {
+          const firstVarHref = vars[0].href || "";
+          const firstVarId = firstVarHref.split("/").pop() || null;
+          setSelectedVariableId(firstVarId);
+        }
       }
 
       const formats = caps.summary?.outputFormats || [];
@@ -125,20 +150,8 @@ export default function SearchCollections() {
         setSelectedFormat(formats[0].mimeType);
       }
     }
-  }, [capabilitiesData]);
+  }, [capabilitiesData, query.keyword]);
 
-  interface SearchCollectionsOutput {
-    collections?: Collection[];
-    error?: string;
-  }
-
-  const query = (toolInfo.input || {}) as {
-    keyword?: string;
-    spatialArea?: string;
-    spatialWkt?: string;
-    startDate?: string;
-    endDate?: string;
-  };
   const output = toolInfo.output as SearchCollectionsOutput | undefined;
   const collections: Collection[] = output?.collections || [];
   const error = output?.error;
@@ -435,7 +448,15 @@ export default function SearchCollections() {
                         const caps = capabilitiesData?.structuredContent as
                           | HarmonyCapabilities
                           | undefined;
-                        const variables = caps?.variables || [];
+                        const rawVariables = caps?.variables || [];
+                        const recommended = getRecommendations(
+                          query.keyword || "",
+                          rawVariables,
+                        );
+                        const variables = [
+                          ...recommended.filter((v) => v.isRecommended),
+                          ...recommended.filter((v) => !v.isRecommended),
+                        ];
                         const services = caps?.services || [];
 
                         const hasSubsetting =
@@ -533,6 +554,7 @@ export default function SearchCollections() {
                                           v.href?.split("/").pop() || "";
                                         const isSelected =
                                           selectedVariableId === varId;
+                                        const recVar = v as RecommendedVariable;
                                         return (
                                           <button
                                             type="button"
@@ -540,16 +562,35 @@ export default function SearchCollections() {
                                             onClick={() =>
                                               setSelectedVariableId(varId)
                                             }
-                                            className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs transition-colors flex items-center justify-between ${
+                                            className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs transition-colors border ${
                                               isSelected
-                                                ? "bg-blue-500/10 border border-blue-500/30 text-blue-600 dark:text-blue-400 font-semibold"
-                                                : "hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-transparent text-zinc-700 dark:text-zinc-300"
+                                                ? "bg-blue-500/10 border-blue-500/30 text-blue-600 dark:text-blue-400 font-semibold"
+                                                : "hover:bg-zinc-100 dark:hover:bg-zinc-800 border-transparent text-zinc-700 dark:text-zinc-300"
                                             }`}
                                           >
-                                            <span>{v.name}</span>
-                                            <span className="text-[10px] text-zinc-400 truncate ml-2 max-w-[200px]">
-                                              {v.longName || v.name}
-                                            </span>
+                                            <div className="flex flex-col w-full">
+                                              <div className="flex items-center justify-between gap-2">
+                                                <div className="flex items-center gap-1.5">
+                                                  <span className="font-mono">
+                                                    {v.name}
+                                                  </span>
+                                                  {recVar.isRecommended && (
+                                                    <span className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-[9px] px-1.5 py-0.5 rounded font-semibold font-sans tracking-wide uppercase">
+                                                      Recommended
+                                                    </span>
+                                                  )}
+                                                </div>
+                                                <span className="text-[10px] text-zinc-400 truncate max-w-[200px]">
+                                                  {v.longName || v.name}
+                                                </span>
+                                              </div>
+                                              {recVar.isRecommended &&
+                                                recVar.reason && (
+                                                  <span className="text-[9px] text-emerald-600 dark:text-emerald-500 font-normal mt-0.5 italic">
+                                                    💡 {recVar.reason}
+                                                  </span>
+                                                )}
+                                            </div>
                                           </button>
                                         );
                                       })}
@@ -708,6 +749,7 @@ export default function SearchCollections() {
                                           v.href?.split("/").pop() || "";
                                         const isSelected =
                                           selectedVariableId === varId;
+                                        const recVar = v as RecommendedVariable;
                                         return (
                                           <button
                                             type="button"
@@ -715,16 +757,35 @@ export default function SearchCollections() {
                                             onClick={() =>
                                               setSelectedVariableId(varId)
                                             }
-                                            className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs transition-colors flex items-center justify-between ${
+                                            className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs transition-colors border ${
                                               isSelected
-                                                ? "bg-blue-500/10 border border-blue-500/30 text-blue-600 dark:text-blue-400 font-semibold"
-                                                : "hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-transparent text-zinc-700 dark:text-zinc-300"
+                                                ? "bg-blue-500/10 border-blue-500/30 text-blue-600 dark:text-blue-400 font-semibold"
+                                                : "hover:bg-zinc-100 dark:hover:bg-zinc-800 border-transparent text-zinc-700 dark:text-zinc-300"
                                             }`}
                                           >
-                                            <span>{v.name}</span>
-                                            <span className="text-[10px] text-zinc-400 truncate ml-2 max-w-[200px]">
-                                              {v.longName || v.name}
-                                            </span>
+                                            <div className="flex flex-col w-full">
+                                              <div className="flex items-center justify-between gap-2">
+                                                <div className="flex items-center gap-1.5">
+                                                  <span className="font-mono">
+                                                    {v.name}
+                                                  </span>
+                                                  {recVar.isRecommended && (
+                                                    <span className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-[9px] px-1.5 py-0.5 rounded font-semibold font-sans tracking-wide uppercase">
+                                                      Recommended
+                                                    </span>
+                                                  )}
+                                                </div>
+                                                <span className="text-[10px] text-zinc-400 truncate max-w-[200px]">
+                                                  {v.longName || v.name}
+                                                </span>
+                                              </div>
+                                              {recVar.isRecommended &&
+                                                recVar.reason && (
+                                                  <span className="text-[9px] text-emerald-600 dark:text-emerald-500 font-normal mt-0.5 italic">
+                                                    💡 {recVar.reason}
+                                                  </span>
+                                                )}
+                                            </div>
                                           </button>
                                         );
                                       })}

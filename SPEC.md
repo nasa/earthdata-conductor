@@ -127,3 +127,7 @@ A modern, responsive, and interactive set of web views integrated into the AI as
 * **Decision**: Implemented an automatic keyword extraction fallback in the `search-collections` tool and modified the granule availability check to assign `granule_count: 0` instead of filtering out collections with empty subsets.
 * **Rationale**: Prevents zero-result search displays in sparse test environments like UAT, allowing users to find datasets even when entering long conversational queries or select temporal ranges for which no granules are currently archived.
 
+### Variable-First Searching & Recommendations (July 2026)
+* **Decision**: Designed and built a query-aware recommendation algorithm on the client side that categorizes and matches collection variables (e.g., wind speed, temperature, humidity, precipitation) against the user's initial search query.
+* **Rationale**: Simplifies data exploration for non-technical users by highlighting matching variables, describing why they are recommended, sorting them to the top of the selection lists, and pre-selecting the best option by default.
+
