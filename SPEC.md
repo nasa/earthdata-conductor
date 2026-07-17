@@ -71,10 +71,10 @@ A modern, responsive, and interactive set of web views integrated into the AI as
   - [x] **Parameter Mapping**: Ensure the Data Access component accepts spatial, temporal, and other subsetting constraints (Completed).
   - [ ] **Browser-side Subsetter**: Configure the Subsetter component to handle Harmony wrangling directly in the user's browser and trigger a completion event when done.
 
-* **Visualization & Analysis** (Planned):
-  - [ ] **Area-averaged Time Series Plots**: Generate inline charts of area-averaged temporal trends.
-  - [ ] **Area-averaged Map Plots**: Display mapped spatial representations of subsetted data.
-  - [ ] **Giovanni Integration**: Render Giovanni time-series and spatial maps.
+* **Visualization & Analysis** (Completed):
+  - [x] **Area-averaged Time Series Plots**: Generate inline charts of area-averaged temporal trends using the `show-time-series-plot` tool.
+  - [x] **Area-averaged Map Plots**: Display mapped spatial representations of subsetted data using the `show-time-averaged-map` tool.
+  - [x] **Giovanni Integration**: Render Giovanni time-series and spatial maps.
 
 ---
 
@@ -130,4 +130,8 @@ A modern, responsive, and interactive set of web views integrated into the AI as
 ### Variable-First Searching & Recommendations (July 2026)
 * **Decision**: Designed and built a query-aware recommendation algorithm on the client side that categorizes and matches collection variables (e.g., wind speed, temperature, humidity, precipitation) against the user's initial search query.
 * **Rationale**: Simplifies data exploration for non-technical users by highlighting matching variables, describing why they are recommended, sorting them to the top of the selection lists, and pre-selecting the best option by default.
+
+### Giovanni Visualizations: Time-Series Plots & Time-Averaged Maps (July 2026)
+* **Decision**: Implemented two new MCP tools `show-time-series-plot` and `show-time-averaged-map` along with corresponding React views rendering NASA's custom `<terra-time-series>` and `<terra-time-average-map>` web components. Added buttons to the search collections details panel under the "Plot Data" tab to trigger these tools.
+* **Rationale**: Enables users to seamlessly visualize subsetted datasets inline in their chat session. Resolves parameters (collection version format, variable names, dates, coordinates) dynamically from client search state to pass accurate bounds automatically.
 

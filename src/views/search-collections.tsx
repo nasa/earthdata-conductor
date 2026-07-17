@@ -96,6 +96,8 @@ export default function SearchCollections() {
   const sendFollowUp = useSendFollowUpMessage();
   const [isBrowsing, setIsBrowsing] = useState(false);
   const [isSubmittingSubset, setIsSubmittingSubset] = useState(false);
+  const [isPlottingSeries, setIsPlottingSeries] = useState(false);
+  const [isMappingAveraged, setIsMappingAveraged] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const [selectedVariableId, setSelectedVariableId] = useState<string | null>(
@@ -802,16 +804,237 @@ export default function SearchCollections() {
                                     the chat.
                                   </p>
 
-                                  <div className="flex justify-end pt-2">
+                                  <div className="flex flex-col sm:flex-row gap-2 justify-end pt-2">
                                     <TerraButton
-                                      onClick={() =>
-                                        alert(
-                                          "Plotting with Giovanni (Planned visualization feature)",
-                                        )
+                                      disabled={
+                                        isBrowsing ||
+                                        isSubmittingSubset ||
+                                        isPlottingSeries ||
+                                        isMappingAveraged ||
+                                        !selectedVariableId
                                       }
+                                      loading={isPlottingSeries}
+                                      onClick={() => {
+                                        if (!selectedVariableId) return;
+
+                                        let bbox: number[] | undefined;
+                                        if (query.spatialWkt) {
+                                          const matches = [
+                                            ...query.spatialWkt.matchAll(
+                                              /(-?\d+\.?\d*)\s+(-?\d+\.?\d*)/g,
+                                            ),
+                                          ];
+                                          if (matches.length >= 4) {
+                                            const lons = matches.map((m) =>
+                                              Number(m[1]),
+                                            );
+                                            const lats = matches.map((m) =>
+                                              Number(m[2]),
+                                            );
+                                            bbox = [
+                                              Math.min(...lons),
+                                              Math.min(...lats),
+                                              Math.max(...lons),
+                                              Math.max(...lats),
+                                            ];
+                                          }
+                                        }
+
+                                        const handleTimeSeriesPlot =
+                                          async () => {
+                                            setIsPlottingSeries(true);
+                                            try {
+                                              const formatToMMDDYYYY = (
+                                                dateStr?: string,
+                                              ) => {
+                                                if (!dateStr) return "";
+                                                try {
+                                                  const d = new Date(dateStr);
+                                                  if (Number.isNaN(d.getTime()))
+                                                    return dateStr;
+                                                  const mm = String(
+                                                    d.getUTCMonth() + 1,
+                                                  ).padStart(2, "0");
+                                                  const dd = String(
+                                                    d.getUTCDate(),
+                                                  ).padStart(2, "0");
+                                                  const yyyy =
+                                                    d.getUTCFullYear();
+                                                  return `${mm}/${dd}/${yyyy}`;
+                                                } catch (_e) {
+                                                  return dateStr;
+                                                }
+                                              };
+
+                                              const formattedStart =
+                                                formatToMMDDYYYY(
+                                                  query.startDate,
+                                                ) || "01/01/2009";
+                                              const formattedEnd =
+                                                formatToMMDDYYYY(
+                                                  query.endDate,
+                                                ) || "01/05/2009";
+
+                                              const locationStr = bbox
+                                                ? `${bbox[0]},${bbox[1]},${bbox[2]},${bbox[3]}`
+                                                : "62,5,95,40";
+
+                                              const version =
+                                                selectedCollection.version ||
+                                                "";
+                                              const sanitizedVersion =
+                                                version.replace(/\./g, "_");
+                                              const collectionParam = version
+                                                ? `${selectedCollection.short_name}_${sanitizedVersion}`
+                                                : selectedCollection.short_name;
+
+                                              const selectedVarObj =
+                                                variables.find(
+                                                  (v) =>
+                                                    (v.href?.split("/").pop() ||
+                                                      "") ===
+                                                    selectedVariableId,
+                                                );
+                                              const varName = selectedVarObj
+                                                ? selectedVarObj.name
+                                                : selectedVariableId;
+
+                                              await sendFollowUp(
+                                                `Please call the 'show-time-series-plot' tool for collection ${collectionParam} for variable ${varName} for time range ${formattedStart} to ${formattedEnd} at location ${locationStr}.`,
+                                              );
+                                            } catch (err) {
+                                              console.error(
+                                                "Failed to trigger time series plot:",
+                                                err,
+                                              );
+                                            } finally {
+                                              setIsPlottingSeries(false);
+                                            }
+                                          };
+
+                                        handleTimeSeriesPlot();
+                                      }}
                                       className="w-full sm:w-auto"
                                     >
-                                      Plot / Analyze Data
+                                      Time Series Plot
+                                      <ArrowRight
+                                        className="h-4 w-4 ml-1.5"
+                                        slot="suffix"
+                                      />
+                                    </TerraButton>
+
+                                    <TerraButton
+                                      disabled={
+                                        isBrowsing ||
+                                        isSubmittingSubset ||
+                                        isPlottingSeries ||
+                                        isMappingAveraged ||
+                                        !selectedVariableId
+                                      }
+                                      loading={isMappingAveraged}
+                                      onClick={() => {
+                                        if (!selectedVariableId) return;
+
+                                        let bbox: number[] | undefined;
+                                        if (query.spatialWkt) {
+                                          const matches = [
+                                            ...query.spatialWkt.matchAll(
+                                              /(-?\d+\.?\d*)\s+(-?\d+\.?\d*)/g,
+                                            ),
+                                          ];
+                                          if (matches.length >= 4) {
+                                            const lons = matches.map((m) =>
+                                              Number(m[1]),
+                                            );
+                                            const lats = matches.map((m) =>
+                                              Number(m[2]),
+                                            );
+                                            bbox = [
+                                              Math.min(...lons),
+                                              Math.min(...lats),
+                                              Math.max(...lons),
+                                              Math.max(...lats),
+                                            ];
+                                          }
+                                        }
+
+                                        const handleTimeAveragedMap =
+                                          async () => {
+                                            setIsMappingAveraged(true);
+                                            try {
+                                              const formatToMMDDYYYY = (
+                                                dateStr?: string,
+                                              ) => {
+                                                if (!dateStr) return "";
+                                                try {
+                                                  const d = new Date(dateStr);
+                                                  if (Number.isNaN(d.getTime()))
+                                                    return dateStr;
+                                                  const mm = String(
+                                                    d.getUTCMonth() + 1,
+                                                  ).padStart(2, "0");
+                                                  const dd = String(
+                                                    d.getUTCDate(),
+                                                  ).padStart(2, "0");
+                                                  const yyyy =
+                                                    d.getUTCFullYear();
+                                                  return `${mm}/${dd}/${yyyy}`;
+                                                } catch (_e) {
+                                                  return dateStr;
+                                                }
+                                              };
+
+                                              const formattedStart =
+                                                formatToMMDDYYYY(
+                                                  query.startDate,
+                                                ) || "01/01/2009";
+                                              const formattedEnd =
+                                                formatToMMDDYYYY(
+                                                  query.endDate,
+                                                ) || "01/05/2009";
+
+                                              const locationStr = bbox
+                                                ? `${bbox[0]},${bbox[1]},${bbox[2]},${bbox[3]}`
+                                                : "62,5,95,40";
+
+                                              const version =
+                                                selectedCollection.version ||
+                                                "";
+                                              const sanitizedVersion =
+                                                version.replace(/\./g, "_");
+                                              const collectionParam = version
+                                                ? `${selectedCollection.short_name}_${sanitizedVersion}`
+                                                : selectedCollection.short_name;
+
+                                              const selectedVarObj =
+                                                variables.find(
+                                                  (v) =>
+                                                    (v.href?.split("/").pop() ||
+                                                      "") ===
+                                                    selectedVariableId,
+                                                );
+                                              const varName = selectedVarObj
+                                                ? selectedVarObj.name
+                                                : selectedVariableId;
+
+                                              await sendFollowUp(
+                                                `Please call the 'show-time-averaged-map' tool for collection ${collectionParam} for variable ${varName} for time range ${formattedStart} to ${formattedEnd} at location ${locationStr}.`,
+                                              );
+                                            } catch (err) {
+                                              console.error(
+                                                "Failed to trigger time averaged map:",
+                                                err,
+                                              );
+                                            } finally {
+                                              setIsMappingAveraged(false);
+                                            }
+                                          };
+
+                                        handleTimeAveragedMap();
+                                      }}
+                                      className="w-full sm:w-auto"
+                                    >
+                                      Time-Averaged Map
                                       <ArrowRight
                                         className="h-4 w-4 ml-1.5"
                                         slot="suffix"

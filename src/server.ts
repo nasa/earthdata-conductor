@@ -18,6 +18,8 @@ import { BrowseDataInputSchema } from "./schemas/browse-data.schema.js";
 import { CreateHarmonyJobInputSchema } from "./schemas/create-harmony-job.schema.js";
 import { GetHarmonyCapabilitiesInputSchema } from "./schemas/get-harmony-capabilities.schema.js";
 import { SearchCollectionsInputSchema } from "./schemas/search-collections.schema.js";
+import { TimeAveragedMapInputSchema } from "./schemas/time-averaged-map.schema.js";
+import { TimeSeriesPlotInputSchema } from "./schemas/time-series-plot.schema.js";
 
 const server = new McpServer(
   {
@@ -789,6 +791,83 @@ Please try the following:
           isError: true,
         };
       }
+    },
+  )
+  .registerTool(
+    {
+      name: "show-time-series-plot",
+      description:
+        "Display an area-averaged time series plot of NASA dataset variable parameters over a spatial location and date range.",
+      inputSchema: TimeSeriesPlotInputSchema.shape,
+      securitySchemes,
+      annotations: {
+        title: "Show Time Series Plot",
+        readOnlyHint: true,
+        destructiveHint: false,
+        openWorldHint: false,
+      },
+      _meta: {
+        "openai/toolInvocation/invoking":
+          "📊 Loading area-averaged time series plot...",
+        "openai/toolInvocation/invoked":
+          "Time series plot loaded successfully.",
+      },
+      view: {
+        component: "time-series-plot",
+        domain: "https://nasa.gov",
+        description: "Area-averaged Time Series Plot",
+        csp,
+      },
+    },
+    async (params) => {
+      return {
+        structuredContent: params,
+        content: [
+          {
+            type: "text",
+            text: `The Area-Averaged Time Series Plot has been loaded in the interactive UI component below for collection '${params.collection}' and variable '${params.variable}' over location '${params.location}'. Instruct the user to interact with the chart directly in the UI panel. Do not summarize or write out duplicate charts.`,
+          },
+        ],
+        isError: false,
+      };
+    },
+  )
+  .registerTool(
+    {
+      name: "show-time-averaged-map",
+      description:
+        "Display a time-averaged map plot of NASA dataset variable parameters over a spatial location and date range.",
+      inputSchema: TimeAveragedMapInputSchema.shape,
+      securitySchemes,
+      annotations: {
+        title: "Show Time-Averaged Map",
+        readOnlyHint: true,
+        destructiveHint: false,
+        openWorldHint: false,
+      },
+      _meta: {
+        "openai/toolInvocation/invoking": "🗺️ Loading time-averaged map plot...",
+        "openai/toolInvocation/invoked":
+          "Time-averaged map loaded successfully.",
+      },
+      view: {
+        component: "time-averaged-map",
+        domain: "https://nasa.gov",
+        description: "Time-averaged Map Plot",
+        csp,
+      },
+    },
+    async (params) => {
+      return {
+        structuredContent: params,
+        content: [
+          {
+            type: "text",
+            text: `The Time-Averaged Map Plot has been loaded in the interactive UI component below for collection '${params.collection}' and variable '${params.variable}' over location '${params.location}'. Instruct the user to interact with the map directly in the UI panel. Do not summarize or write out duplicate map details.`,
+          },
+        ],
+        isError: false,
+      };
     },
   );
 
