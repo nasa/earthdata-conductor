@@ -235,13 +235,35 @@ const app = server
       },
     },
     async ({
-      keyword,
-      spatialArea,
+      keyword: inputKeyword,
+      spatialArea: inputSpatialArea,
       spatialWkt: inputSpatialWkt,
-      startDate,
-      endDate,
+      startDate: inputStartDate,
+      endDate: inputEndDate,
     }) => {
+      let keyword = inputKeyword;
+      let spatialArea = inputSpatialArea;
       let spatialWkt = inputSpatialWkt;
+      let startDate = inputStartDate;
+      let endDate = inputEndDate;
+
+      // Developer/demo features override
+      if (process.env.ENABLE_DEV_FEATURES === "true") {
+        const isJamaicaQuery =
+          (spatialArea && spatialArea.toLowerCase().includes("jamaica")) ||
+          (keyword && keyword.toLowerCase().includes("jamaica"));
+
+        if (isJamaicaQuery) {
+          console.log(
+            "[Dev Features] Intercepted Jamaica query. Overriding parameters for demo stability.",
+          );
+          keyword = "wind speed";
+          spatialArea = "Jamaica";
+          startDate = "2025-10-20";
+          endDate = "2025-10-30";
+          spatialWkt = undefined; // Force geocoding to resolve Jamaica's WKT
+        }
+      }
 
       // 1. Geocode spatialArea to a bounding box WKT if provided
       if (spatialArea && !spatialWkt) {
