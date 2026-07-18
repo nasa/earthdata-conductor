@@ -139,7 +139,7 @@ A modern, responsive, and interactive set of web views integrated into the AI as
 * **Decision**: Added a local cache state `cachedCollections` for results and added a loading check `!output` to the `search-collections` view.
 * **Rationale**: Prevents search results from disappearing and flashing a "No Datasets Found" message during background capability requests or chat history re-renders when the session's active tool changes.
 
-### GES DISC Domains Content Security Policy (July 2026)
-* **Decision**: Added `https://disc.gsfc.nasa.gov` and `https://disc.uat.gsfc.nasa.gov` to the `connectDomains` array in [csp.ts](file:///Users/joncarlson/projects/earthdata-ui-mcp/src/csp.ts).
-* **Rationale**: Resolves Content Security Policy (CSP) fetch violations when rendering time-series or time-averaged maps that load metadata directly from GES DISC endpoints.
+### GES DISC & Map Tiles Content Security Policy (July 2026)
+* **Decision**: Added `https://disc.gsfc.nasa.gov`, `https://disc.uat.gsfc.nasa.gov`, and proxy endpoints to `connectDomains`, and `https://tile.openstreetmap.org` to `resourceDomains` in [csp.ts](file:///Users/joncarlson/projects/earthdata-ui-mcp/src/csp.ts).
+* **Rationale**: Resolves Content Security Policy (CSP) violations when fetching dataset metadata and loading OpenStreetMap imagery tiles in the inline mapping and charting views.
 

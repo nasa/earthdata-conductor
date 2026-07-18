@@ -24,7 +24,7 @@ import { TimeSeriesPlotInputSchema } from "./schemas/time-series-plot.schema.js"
 const server = new McpServer(
   {
     name: "earthdata-ui-mcp",
-    version: "0.0.1",
+    version: "0.0.2",
   },
   { capabilities: {} },
 );
@@ -342,7 +342,7 @@ const app = server
 
       // 3. Connect to Earthdata MCP UAT and call get_collections
       const mcpClient = new Client(
-        { name: "earthdata-ui-mcp-client", version: "0.0.1" },
+        { name: "earthdata-ui-mcp-client", version: "0.0.2" },
         { capabilities: {} },
       );
       const transport = new StreamableHTTPClientTransport(
