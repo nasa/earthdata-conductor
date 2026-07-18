@@ -9,14 +9,17 @@ export default function TimeAveragedMapView() {
   const input = (toolInfo.input || {}) as TimeAveragedMapInput;
   const output = toolInfo.output as { bearerToken?: string } | undefined;
 
+  const sanitizedCollection = input.collection?.replace(/\./g, "_");
+  const sanitizedVariable = input.variable?.replace(/\./g, "_");
+
   return (
     <TerraProvider>
       <div className="w-full min-h-[450px]">
-        {input.collection && input.variable ? (
+        {sanitizedCollection && sanitizedVariable ? (
           <TerraTimeAverageMap
             className="w-full h-full"
-            collection={input.collection}
-            variable={input.variable}
+            collection={sanitizedCollection}
+            variable={sanitizedVariable}
             startDate={input.startDate}
             endDate={input.endDate}
             location={input.location}
