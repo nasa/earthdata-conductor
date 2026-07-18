@@ -135,9 +135,9 @@ A modern, responsive, and interactive set of web views integrated into the AI as
 * **Decision**: Implemented two new MCP tools `show-time-series-plot` and `show-time-averaged-map` along with corresponding React views rendering NASA's custom `<terra-time-series>` and `<terra-time-average-map>` web components. Added buttons to the search collections details panel under the "Plot Data" tab to trigger these tools.
 * **Rationale**: Enables users to seamlessly visualize subsetted datasets inline in their chat session. Resolves parameters (collection version format, variable names, dates, coordinates) dynamically from client search state to pass accurate bounds automatically.
 
-### Search Results Caching & Loading State (July 2026)
-* **Decision**: Added a local cache state `cachedCollections` for results and added a loading check `!output` to the `search-collections` view.
-* **Rationale**: Prevents search results from disappearing and flashing a "No Datasets Found" message during background capability requests or chat history re-renders when the session's active tool changes.
+### Search Results Caching & Resolved Query Parameters (July 2026)
+* **Decision**: Added a local cache state `cachedCollections` for results, added a loading check `!output`, and merged `toolInfo.input` with `toolInfo.output.query` into a single `query` object in the `search-collections` view.
+* **Rationale**: Prevents search results from disappearing and flashing a "No Datasets Found" message during background requests, and ensures that the client correctly uses the server-resolved query parameters (like the geocoded or overridden bounding box WKT) instead of falling back to default global coordinates.
 
 ### GES DISC & Map Tiles Content Security Policy (July 2026)
 * **Decision**: Added `https://disc.gsfc.nasa.gov`, `https://disc.uat.gsfc.nasa.gov`, and proxy endpoints to `connectDomains`, and `https://tile.openstreetmap.org` to `resourceDomains` in [csp.ts](file:///Users/joncarlson/projects/earthdata-ui-mcp/src/csp.ts).

@@ -81,11 +81,23 @@ export default function SearchCollections() {
   const toolInfo = useToolInfo<"search-collections">();
 
   interface SearchCollectionsOutput {
+    query?: {
+      keyword?: string;
+      spatialArea?: string;
+      spatialWkt?: string;
+      startDate?: string;
+      endDate?: string;
+    };
     collections?: Collection[];
     error?: string;
   }
 
-  const query = (toolInfo.input || {}) as {
+  const output = toolInfo.output as SearchCollectionsOutput | undefined;
+
+  const query = {
+    ...(toolInfo.input || {}),
+    ...(output?.query || {}),
+  } as {
     keyword?: string;
     spatialArea?: string;
     spatialWkt?: string;
@@ -154,7 +166,6 @@ export default function SearchCollections() {
     }
   }, [capabilitiesData, query.keyword]);
 
-  const output = toolInfo.output as SearchCollectionsOutput | undefined;
   const [cachedCollections, setCachedCollections] = useState<Collection[]>([]);
 
   useEffect(() => {
