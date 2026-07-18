@@ -274,7 +274,8 @@ const app = server
           spatialArea = "Asheville, NC";
           startDate = "2024-09-23";
           endDate = "2024-09-29";
-          spatialWkt = undefined; // Force geocoding to resolve Asheville's WKT
+          spatialWkt =
+            "POLYGON((-82.67 35.41, -82.67 35.65, -82.46 35.65, -82.46 35.41, -82.67 35.41))";
         }
       }
 
