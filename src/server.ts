@@ -253,15 +253,28 @@ const app = server
           spatialArea?.toLowerCase().includes("jamaica") ||
           keyword?.toLowerCase().includes("jamaica");
 
+        const isPrecipitationQuery = keyword
+          ?.toLowerCase()
+          .includes("precipitation");
+
         if (isJamaicaQuery) {
           console.log(
             "[Dev Features] Intercepted Jamaica query. Overriding parameters for demo stability.",
           );
           keyword = "wind speed";
           spatialArea = "Jamaica";
-          startDate = "2025-10-15";
-          endDate = "2025-11-15";
+          startDate = "2025-10-20";
+          endDate = "2025-10-30";
           spatialWkt = undefined; // Force geocoding to resolve Jamaica's WKT
+        } else if (isPrecipitationQuery) {
+          console.log(
+            "[Dev Features] Intercepted precipitation query. Overriding parameters for demo stability.",
+          );
+          keyword = "precipitation";
+          spatialArea = "Asheville, NC";
+          startDate = "2024-09-23";
+          endDate = "2024-09-29";
+          spatialWkt = undefined; // Force geocoding to resolve Asheville's WKT
         }
       }
 
@@ -461,6 +474,113 @@ const app = server
               "Failed to parse get_collections output as JSON:",
               parseErr,
             );
+          }
+        }
+
+        // Inject GPM_3IMERGHH_07 if keyword has precipitation and ENABLE_DEV_FEATURES is true
+        if (
+          process.env.ENABLE_DEV_FEATURES === "true" &&
+          keyword?.toLowerCase().includes("precipitation")
+        ) {
+          const hasGpmV7 = collectionsList.some((c: any) => {
+            const sName = c.short_name || c.shortName;
+            const ver = c.version || c.version_id || c.versionId;
+            return sName === "GPM_3IMERGHH" && ver === "07";
+          });
+
+          if (!hasGpmV7) {
+            try {
+              console.log(
+                "[Dev Features] GPM_3IMERGHH_07 not in default search results. Querying CMR directly...",
+              );
+              const fetchRes = (await mcpClient.callTool({
+                name: "get_collections",
+                arguments: {
+                  keyword: "GPM_3IMERGHH",
+                  limit: 5,
+                },
+              })) as { content?: { type: string; text: string }[] };
+
+              const fetchRawText = fetchRes.content?.[0]?.text;
+              let foundDirect = false;
+              if (fetchRawText) {
+                const fetchParsed = JSON.parse(fetchRawText);
+                const fetchCols =
+                  fetchParsed.collections ??
+                  (Array.isArray(fetchParsed)
+                    ? fetchParsed
+                    : (fetchParsed.results ?? []));
+
+                const gpmItem = fetchCols.find((c: any) => {
+                  const sName = c.short_name || c.shortName;
+                  const ver = c.version || c.version_id || c.versionId;
+                  return sName === "GPM_3IMERGHH" && ver === "07";
+                });
+
+                if (gpmItem) {
+                  console.log(
+                    "[Dev Features] Found GPM_3IMERGHH_07 in CMR direct query. Prepended to collections list.",
+                  );
+                  collectionsList.unshift(gpmItem);
+                  foundDirect = true;
+                } else {
+                  console.warn(
+                    "[Dev Features] GPM_3IMERGHH_07 not found in CMR direct query. Trying any version.",
+                  );
+                  const anyGpmItem = fetchCols.find((c: any) => {
+                    const sName = c.short_name || c.shortName;
+                    return sName === "GPM_3IMERGHH";
+                  });
+                  if (anyGpmItem) {
+                    anyGpmItem.version = "07"; // Hardcode version for demo consistency
+                    console.log(
+                      "[Dev Features] Adding general version of GPM_3IMERGHH forced to version 07.",
+                    );
+                    collectionsList.unshift(anyGpmItem);
+                    foundDirect = true;
+                  }
+                }
+              }
+
+              if (!foundDirect) {
+                console.log(
+                  "[Dev Features] CMR query did not return GPM_3IMERGHH. Injecting mockup fallback.",
+                );
+                collectionsList.unshift({
+                  concept_id: "C1276812863-GES_DISC",
+                  entry_title:
+                    "GPM IMERG Late Precipitation L3 1 half hour 0.1 degree x 0.1 degree V07 (GPM_3IMERGHH) at GES DISC",
+                  short_name: "GPM_3IMERGHH",
+                  version: "07",
+                  summary:
+                    "Global Precipitation Measurement (GPM) Integrated Multi-satellitE Retrievals for GPM (IMERG) Late Run Version 7.",
+                  description:
+                    "Global Precipitation Measurement (GPM) Integrated Multi-satellitE Retrievals for GPM (IMERG) Late Run Version 7.",
+                  provider_id: "GES_DISC",
+                  processing_level_id: "3",
+                  granule_count: 500,
+                });
+              }
+            } catch (err) {
+              console.error(
+                "[Dev Features] Failed to fetch GPM_3IMERGHH_07 directly. Injecting mockup fallback.",
+                err,
+              );
+              collectionsList.unshift({
+                concept_id: "C1276812863-GES_DISC",
+                entry_title:
+                  "GPM IMERG Late Precipitation L3 1 half hour 0.1 degree x 0.1 degree V07 (GPM_3IMERGHH) at GES DISC",
+                short_name: "GPM_3IMERGHH",
+                version: "07",
+                summary:
+                  "Global Precipitation Measurement (GPM) Integrated Multi-satellitE Retrievals for GPM (IMERG) Late Run Version 7.",
+                description:
+                  "Global Precipitation Measurement (GPM) Integrated Multi-satellitE Retrievals for GPM (IMERG) Late Run Version 7.",
+                provider_id: "GES_DISC",
+                processing_level_id: "3",
+                granule_count: 500,
+              });
+            }
           }
         }
 
