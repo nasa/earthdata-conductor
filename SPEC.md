@@ -135,3 +135,7 @@ A modern, responsive, and interactive set of web views integrated into the AI as
 * **Decision**: Implemented two new MCP tools `show-time-series-plot` and `show-time-averaged-map` along with corresponding React views rendering NASA's custom `<terra-time-series>` and `<terra-time-average-map>` web components. Added buttons to the search collections details panel under the "Plot Data" tab to trigger these tools.
 * **Rationale**: Enables users to seamlessly visualize subsetted datasets inline in their chat session. Resolves parameters (collection version format, variable names, dates, coordinates) dynamically from client search state to pass accurate bounds automatically.
 
+### Search Results Caching & Loading State (July 2026)
+* **Decision**: Added a local cache state `cachedCollections` for results and added a loading check `!output` to the `search-collections` view.
+* **Rationale**: Prevents search results from disappearing and flashing a "No Datasets Found" message during background capability requests or chat history re-renders when the session's active tool changes.
+

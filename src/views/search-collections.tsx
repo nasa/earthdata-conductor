@@ -155,7 +155,15 @@ export default function SearchCollections() {
   }, [capabilitiesData, query.keyword]);
 
   const output = toolInfo.output as SearchCollectionsOutput | undefined;
-  const collections: Collection[] = output?.collections || [];
+  const [cachedCollections, setCachedCollections] = useState<Collection[]>([]);
+
+  useEffect(() => {
+    if (output?.collections) {
+      setCachedCollections(output.collections);
+    }
+  }, [output]);
+
+  const collections = cachedCollections;
   const error = output?.error;
 
   // Select the first collection by default
@@ -269,6 +277,13 @@ export default function SearchCollections() {
             <p className="text-sm text-zinc-500 mt-1 max-w-md mx-auto">
               {error}
             </p>
+          </div>
+        ) : !output ? (
+          <div className="flex flex-col items-center justify-center gap-3 py-16">
+            <TerraLoader indeterminate />
+            <span className="text-xs text-zinc-500 font-medium">
+              Loading NASA Earthdata collections...
+            </span>
           </div>
         ) : collections.length === 0 ? (
           <div className="p-16 text-center">
