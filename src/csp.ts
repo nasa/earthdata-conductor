@@ -16,6 +16,7 @@ const csp = {
     "https://4nad4npjmf.execute-api.us-east-1.amazonaws.com",
     "https://8weebb031a.execute-api.us-east-1.amazonaws.com",
     "https://u2u5qu332rhmxpiazjcqz6gkdm.appsync-api.us-east-1.amazonaws.com",
+    "https://sjldutoe6c.execute-api.us-east-1.amazonaws.com",
     "data:",
   ],
 };
