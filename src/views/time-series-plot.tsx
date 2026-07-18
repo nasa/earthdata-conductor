@@ -9,14 +9,16 @@ export default function TimeSeriesPlotView() {
   const input = (toolInfo.input || {}) as TimeSeriesPlotInput;
   const output = toolInfo.output as { bearerToken?: string } | undefined;
 
+  const parsedVariable = input.variable?.split("/").pop() || input.variable;
+
   return (
     <TerraProvider>
       <div className="w-full min-h-[450px]">
-        {input.collection && input.variable ? (
+        {input.collection && parsedVariable ? (
           <TerraTimeSeries
             className="w-full h-full"
             collection={input.collection}
-            variable={input.variable}
+            variable={parsedVariable}
             startDate={input.startDate}
             endDate={input.endDate}
             location={input.location}
