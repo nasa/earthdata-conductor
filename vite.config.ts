@@ -9,6 +9,10 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@nasa-terra/components": path.resolve(
+        __dirname,
+        "../terra-ui-components",
+      ),
     },
   },
   build: {

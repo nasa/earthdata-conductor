@@ -483,11 +483,13 @@ const app = server
           process.env.ENABLE_DEV_FEATURES === "true" &&
           keyword?.toLowerCase().includes("precipitation")
         ) {
-          const hasGpmV7 = collectionsList.some((c: any) => {
-            const sName = c.short_name || c.shortName;
-            const ver = c.version || c.version_id || c.versionId;
-            return sName === "GPM_3IMERGHH" && ver === "07";
-          });
+          const hasGpmV7 = collectionsList.some(
+            (c: Record<string, unknown>) => {
+              const sName = c.short_name || c.shortName;
+              const ver = c.version || c.version_id || c.versionId;
+              return sName === "GPM_3IMERGHH" && ver === "07";
+            },
+          );
 
           if (!hasGpmV7) {
             try {
@@ -512,7 +514,7 @@ const app = server
                     ? fetchParsed
                     : (fetchParsed.results ?? []));
 
-                const gpmItem = fetchCols.find((c: any) => {
+                const gpmItem = fetchCols.find((c: Record<string, unknown>) => {
                   const sName = c.short_name || c.shortName;
                   const ver = c.version || c.version_id || c.versionId;
                   return sName === "GPM_3IMERGHH" && ver === "07";
@@ -528,10 +530,12 @@ const app = server
                   console.warn(
                     "[Dev Features] GPM_3IMERGHH_07 not found in CMR direct query. Trying any version.",
                   );
-                  const anyGpmItem = fetchCols.find((c: any) => {
-                    const sName = c.short_name || c.shortName;
-                    return sName === "GPM_3IMERGHH";
-                  });
+                  const anyGpmItem = fetchCols.find(
+                    (c: Record<string, unknown>) => {
+                      const sName = c.short_name || c.shortName;
+                      return sName === "GPM_3IMERGHH";
+                    },
+                  );
                   if (anyGpmItem) {
                     anyGpmItem.version = "07"; // Hardcode version for demo consistency
                     console.log(

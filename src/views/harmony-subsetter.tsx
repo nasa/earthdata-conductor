@@ -1,5 +1,6 @@
 import TerraDataSubsetter from "@nasa-terra/components/dist/react/data-subsetter/index.js";
 import { useToolInfo } from "../helpers.js";
+import { HarmonyJobStatusHeader } from "./components/HarmonyJobStatusHeader.js";
 import TerraProvider from "./components/TerraProvider.js";
 import "@/index.css";
 import { useEffect, useRef } from "react";
@@ -61,12 +62,7 @@ export default function HarmonySubsetter() {
 
         {jobId ? (
           <div className="space-y-4">
-            <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs font-mono text-zinc-600 dark:text-zinc-300">
-              <span className="font-semibold text-indigo-600 dark:text-indigo-400">
-                Job ID:
-              </span>
-              <span>{jobId}</span>
-            </div>
+            <HarmonyJobStatusHeader jobId={jobId} bearerToken={bearerToken} />
             <TerraDataSubsetter
               jobId={jobId}
               bearerToken={bearerToken}
