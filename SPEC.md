@@ -147,4 +147,9 @@ A modern, responsive, and interactive set of web views integrated into the AI as
 * **Decision**: Integrated the newly exported React hooks `usePollHarmonyJobStatus`, `useCreateHarmonyJob`, and `useHarmonyRequest` from `@nasa-terra/components/dist/react/index.js` into the MCP frontend. Created `HarmonyJobStatusHeader` to display real-time progress, status badges, and inline job cancellation capabilities in `HarmonySubsetter`.
 * **Rationale**: Replaces manual status polling and custom state handling with standard, official React hooks from `@nasa-terra/components`, providing a consistent job status tracking UX across NASA Earthdata applications.
 
+### Explicit MCP Tool Output Schemas (August 2026)
+* **Decision**: Added `outputSchema` Zod definitions to all 6 registered MCP tools (`browse-data`, `search-collections`, `create-harmony-job`, `get-harmony-capabilities`, `show-time-series-plot`, `show-time-averaged-map`) in `src/schemas/` and `src/server.ts`.
+* **Rationale**: Ensures full compliance with the Model Context Protocol specification for tool output schemas, enabling MCP host clients and inspector devtools to validate structured responses.
+
+
 

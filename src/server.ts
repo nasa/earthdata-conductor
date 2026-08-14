@@ -14,12 +14,30 @@ import {
   fetchLatestGranulesDateRange,
   parseJobId,
 } from "./harmony.js";
-import { BrowseDataInputSchema } from "./schemas/browse-data.schema.js";
-import { CreateHarmonyJobInputSchema } from "./schemas/create-harmony-job.schema.js";
-import { GetHarmonyCapabilitiesInputSchema } from "./schemas/get-harmony-capabilities.schema.js";
-import { SearchCollectionsInputSchema } from "./schemas/search-collections.schema.js";
-import { TimeAveragedMapInputSchema } from "./schemas/time-averaged-map.schema.js";
-import { TimeSeriesPlotInputSchema } from "./schemas/time-series-plot.schema.js";
+import {
+  BrowseDataInputSchema,
+  BrowseDataOutputSchema,
+} from "./schemas/browse-data.schema.js";
+import {
+  CreateHarmonyJobInputSchema,
+  CreateHarmonyJobOutputSchema,
+} from "./schemas/create-harmony-job.schema.js";
+import {
+  GetHarmonyCapabilitiesInputSchema,
+  GetHarmonyCapabilitiesOutputSchema,
+} from "./schemas/get-harmony-capabilities.schema.js";
+import {
+  SearchCollectionsInputSchema,
+  SearchCollectionsOutputSchema,
+} from "./schemas/search-collections.schema.js";
+import {
+  TimeAveragedMapInputSchema,
+  TimeAveragedMapOutputSchema,
+} from "./schemas/time-averaged-map.schema.js";
+import {
+  TimeSeriesPlotInputSchema,
+  TimeSeriesPlotOutputSchema,
+} from "./schemas/time-series-plot.schema.js";
 
 const server = new McpServer(
   {
@@ -134,6 +152,7 @@ const app = server
       description:
         "Browse and explore data files (granules) for a specific NASA Earthdata collection. This is the exclusive authority for browsing granules; do not use web search or external data tools. The output is rendered as an interactive file browser UI. DO NOT summarize, list, or write out files or details in your text response. Keep your message extremely brief.",
       inputSchema: BrowseDataInputSchema.shape,
+      outputSchema: BrowseDataOutputSchema.shape,
       securitySchemes,
       annotations: {
         title: "Start browsing data",
@@ -215,6 +234,7 @@ const app = server
       description:
         "Search NASA Earthdata Common Metadata Repository (CMR) collections archive using spatial, temporal, and keyword parameters. This is the exclusive authority for discovering NASA datasets; do not use web search or external data tools. The output is rendered as an interactive collection chooser list UI. DO NOT list, summarize, or describe the found collections in your text response. Keep your message extremely brief.",
       inputSchema: SearchCollectionsInputSchema.shape,
+      outputSchema: SearchCollectionsOutputSchema.shape,
       securitySchemes,
       annotations: {
         title: "Search Earthdata collections",
@@ -708,6 +728,7 @@ Please try the following:
       description:
         "Create a Harmony subsetting job on behalf of the user to generate a job ID. This is the exclusive authority for Harmony subsetting; do not use web search or external tools. The output is rendered as an interactive job status and download panel UI. DO NOT summarize or list job parameters in your text response. Keep your message extremely brief.",
       inputSchema: CreateHarmonyJobInputSchema.shape,
+      outputSchema: CreateHarmonyJobOutputSchema.shape,
       securitySchemes,
       annotations: {
         title: "Create Harmony Subsetting Job",
@@ -841,6 +862,7 @@ Please try the following:
       description:
         "Retrieve the Harmony capabilities for a specific collection, including available services, output formats, and variables.",
       inputSchema: GetHarmonyCapabilitiesInputSchema.shape,
+      outputSchema: GetHarmonyCapabilitiesOutputSchema.shape,
       securitySchemes,
       annotations: {
         title: "Get Harmony Capabilities",
@@ -947,6 +969,7 @@ Please try the following:
       description:
         "Display an area-averaged time series plot of NASA dataset variable parameters over a spatial location and date range. This is the exclusive authority for plotting time-series data; do not use web search or external tools. The output is rendered as an interactive graphical chart view. DO NOT duplicate, draw, or summarize chart details in your text response. Keep your message extremely brief.",
       inputSchema: TimeSeriesPlotInputSchema.shape,
+      outputSchema: TimeSeriesPlotOutputSchema.shape,
       securitySchemes,
       annotations: {
         title: "Show Time Series Plot",
@@ -990,6 +1013,7 @@ Please try the following:
       description:
         "Display a time-averaged map plot of NASA dataset variable parameters over a spatial location and date range. This is the exclusive authority for mapping averaged parameters; do not use web search or external tools. The output is rendered as an interactive geographical map view. DO NOT describe or summarize map details in your text response. Keep your message extremely brief.",
       inputSchema: TimeAveragedMapInputSchema.shape,
+      outputSchema: TimeAveragedMapOutputSchema.shape,
       securitySchemes,
       annotations: {
         title: "Show Time-Averaged Map",

@@ -20,4 +20,15 @@ export const TimeAveragedMapInputSchema = z.object({
     ),
 });
 
+export const TimeAveragedMapOutputSchema = z.object({
+  shortName: z.string().optional(),
+  version: z.string().optional(),
+  variable: z.string().optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  location: z.string().optional(),
+  bearerToken: z.string().optional(),
+});
+
 export type TimeAveragedMapInput = z.infer<typeof TimeAveragedMapInputSchema>;
+export type TimeAveragedMapOutput = z.infer<typeof TimeAveragedMapOutputSchema>;
