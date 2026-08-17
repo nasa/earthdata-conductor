@@ -228,17 +228,19 @@ export default function SearchCollections() {
       <div className="mx-auto w-full max-w-5xl rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50 overflow-hidden shadow-xl">
         {/* Header section with minimalistic Terra UI style */}
         <div className="relative border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400">
-              <Compass className="h-6 w-6" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold tracking-tight">
-                Dataset Search Results
-              </h2>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                Select from matching NASA Earth science collections below.
-              </p>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400">
+                <Compass className="h-6 w-6" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold tracking-tight">
+                  Dataset Search Results
+                </h2>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                  Select from matching NASA Earth science collections below.
+                </p>
+              </div>
             </div>
           </div>
 

@@ -28,6 +28,26 @@ export const SearchCollectionsInputSchema = z.object({
     .describe("The end date of the interest period (e.g., '2025-12-31')"),
 });
 
+export const SearchCollectionsOutputSchema = z
+  .object({
+    query: z
+      .object({
+        keyword: z.string().optional(),
+        spatialArea: z.string().optional(),
+        spatialWkt: z.string().optional(),
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+      })
+      .passthrough()
+      .optional(),
+    collections: z.array(z.record(z.string(), z.unknown())).optional(),
+    error: z.string().optional(),
+  })
+  .passthrough();
+
 export type SearchCollectionsInput = z.infer<
   typeof SearchCollectionsInputSchema
+>;
+export type SearchCollectionsOutput = z.infer<
+  typeof SearchCollectionsOutputSchema
 >;

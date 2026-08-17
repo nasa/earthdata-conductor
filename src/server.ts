@@ -17,9 +17,12 @@ import {
 import { BrowseDataInputSchema } from "./schemas/browse-data.schema.js";
 import { CreateHarmonyJobInputSchema } from "./schemas/create-harmony-job.schema.js";
 import { GetHarmonyCapabilitiesInputSchema } from "./schemas/get-harmony-capabilities.schema.js";
+import { OpenInNotebookInputSchema } from "./schemas/open-in-notebook.schema.js";
 import { SearchCollectionsInputSchema } from "./schemas/search-collections.schema.js";
 import { TimeAveragedMapInputSchema } from "./schemas/time-averaged-map.schema.js";
 import { TimeSeriesPlotInputSchema } from "./schemas/time-series-plot.schema.js";
+import { generateMultiStepNotebook, getMarimoUrl } from "./utils/marimo.js";
+import { sessionHistory } from "./utils/session-history.js";
 
 const server = new McpServer(
   {
@@ -127,6 +130,10 @@ const securitySchemes = process.env.AUTH_TOKEN
   ? []
   : [{ type: "oauth2" as const }];
 
+const widgetDomain =
+  process.env.WIDGET_DOMAIN ||
+  (process.env.NODE_ENV === "production" ? "https://nasa.gov" : "*");
+
 const app = server
   .registerTool(
     {
@@ -147,7 +154,7 @@ const app = server
       },
       view: {
         component: "browse-data",
-        domain: "https://nasa.gov", // TODO: replace with URL the widget will be served from in production
+        domain: widgetDomain,
         description: "Browse data files directly from the archive.",
         csp,
       },
@@ -195,6 +202,14 @@ const app = server
         }
       }
 
+      sessionHistory.addStep("browse-data", {
+        shortName,
+        version,
+        spatialArea,
+        startDate,
+        endDate,
+      });
+
       return {
         structuredContent: {
           shortName,
@@ -229,7 +244,7 @@ const app = server
       },
       view: {
         component: "search-collections",
-        domain: "https://nasa.gov",
+        domain: widgetDomain,
         description: "Search and choose datasets.",
         csp,
       },
@@ -483,11 +498,13 @@ const app = server
           process.env.ENABLE_DEV_FEATURES === "true" &&
           keyword?.toLowerCase().includes("precipitation")
         ) {
-          const hasGpmV7 = collectionsList.some((c: any) => {
-            const sName = c.short_name || c.shortName;
-            const ver = c.version || c.version_id || c.versionId;
-            return sName === "GPM_3IMERGHH" && ver === "07";
-          });
+          const hasGpmV7 = collectionsList.some(
+            (c: Record<string, unknown>) => {
+              const sName = c.short_name || c.shortName;
+              const ver = c.version || c.version_id || c.versionId;
+              return sName === "GPM_3IMERGHH" && ver === "07";
+            },
+          );
 
           if (!hasGpmV7) {
             try {
@@ -512,7 +529,7 @@ const app = server
                     ? fetchParsed
                     : (fetchParsed.results ?? []));
 
-                const gpmItem = fetchCols.find((c: any) => {
+                const gpmItem = fetchCols.find((c: Record<string, unknown>) => {
                   const sName = c.short_name || c.shortName;
                   const ver = c.version || c.version_id || c.versionId;
                   return sName === "GPM_3IMERGHH" && ver === "07";
@@ -528,10 +545,12 @@ const app = server
                   console.warn(
                     "[Dev Features] GPM_3IMERGHH_07 not found in CMR direct query. Trying any version.",
                   );
-                  const anyGpmItem = fetchCols.find((c: any) => {
-                    const sName = c.short_name || c.shortName;
-                    return sName === "GPM_3IMERGHH";
-                  });
+                  const anyGpmItem = fetchCols.find(
+                    (c: Record<string, unknown>) => {
+                      const sName = c.short_name || c.shortName;
+                      return sName === "GPM_3IMERGHH";
+                    },
+                  );
                   if (anyGpmItem) {
                     anyGpmItem.version = "07"; // Hardcode version for demo consistency
                     console.log(
@@ -683,6 +702,14 @@ Please try the following:
         };
       }
 
+      sessionHistory.addStep("search-collections", {
+        keyword,
+        spatialArea,
+        spatialWkt,
+        startDate,
+        endDate,
+      });
+
       return {
         structuredContent: {
           query: { keyword, spatialArea, spatialWkt, startDate, endDate },
@@ -718,8 +745,8 @@ Please try the following:
       },
       view: {
         component: "harmony-subsetter",
-        domain: "https://nasa.gov",
-        description: "Harmony Subsetting View",
+        domain: widgetDomain,
+        description: "Harmony Subsetting Job Tracker & Data Access",
         csp,
       },
     },
@@ -800,6 +827,15 @@ Please try the following:
             isError: true,
           };
         }
+
+        sessionHistory.addStep("create-harmony-job", {
+          collectionId: conceptId,
+          variable: variableEntryId,
+          bbox: boundingBox,
+          startDate,
+          endDate,
+          format,
+        });
 
         return {
           structuredContent: {
@@ -958,13 +994,14 @@ Please try the following:
       },
       view: {
         component: "time-series-plot",
-        domain: "https://nasa.gov",
+        domain: widgetDomain,
         description: "Area-averaged Time Series Plot",
         csp,
       },
     },
     async (params, extra) => {
       const authInfo = extra.authInfo as EarthdataAuthInfo | undefined;
+      sessionHistory.addStep("time-series-plot", { ...params });
       return {
         structuredContent: {
           ...params,
@@ -1000,13 +1037,14 @@ Please try the following:
       },
       view: {
         component: "time-averaged-map",
-        domain: "https://nasa.gov",
+        domain: widgetDomain,
         description: "Time-averaged Map Plot",
         csp,
       },
     },
     async (params, extra) => {
       const authInfo = extra.authInfo as EarthdataAuthInfo | undefined;
+      sessionHistory.addStep("time-averaged-map", { ...params });
       return {
         structuredContent: {
           ...params,
@@ -1024,39 +1062,44 @@ Please try the following:
   )
   .registerTool(
     {
-      name: "create-harmony-job",
+      name: "open-in-notebook",
       description:
-        "Create a Harmony subsetting job on behalf of the user to generate a job ID.",
-      inputSchema: z.object({
-        collectionId: z.string(),
-        subsetParams: z.record(z.string(), z.any()),
-      }).shape,
-      securitySchemes: [{ type: "oauth2" }],
+        "Export the current conversation session or NASA dataset workflow into an interactive Python notebook runnable directly in a live notebook environment. This gathers search, subsetting, and visualization steps performed so far.",
+      inputSchema: OpenInNotebookInputSchema.shape,
+      securitySchemes,
+      annotations: {
+        title: "Continue Analysis in a Notebook",
+        readOnlyHint: true,
+        destructiveHint: false,
+        openWorldHint: false,
+      },
+      _meta: {
+        "openai/toolInvocation/invoking":
+          "📓 Generating Python analysis notebook...",
+        "openai/toolInvocation/invoked": "Python notebook ready.",
+      },
+      view: {
+        component: "open-in-notebook",
+        domain: widgetDomain,
+        description: "Interactive Python Notebook Launcher",
+        csp,
+      },
     },
-    async ({ collectionId, subsetParams }, extra) => {
-      const authInfo = extra.authInfo as EarthdataAuthInfo | undefined;
-      if (!authInfo) {
-        return {
-          content: [
-            {
-              type: "text",
-              text: "Sign in is required to perform subsetting.",
-            },
-          ],
-          isError: true,
-        };
-      }
+    async (params) => {
+      const steps = sessionHistory.getSteps();
+      const pythonCode = generateMultiStepNotebook(steps, params);
+      const marimoUrl = getMarimoUrl(pythonCode);
+
       return {
         structuredContent: {
-          jobId: "harmony-job-mock-id-1234",
-          user: authInfo.extra.uid,
-          collectionId,
-          subsetParams,
+          marimoUrl,
+          pythonCode,
+          stepCount: steps.length,
         },
         content: [
           {
             type: "text",
-            text: `Harmony subsetting job created successfully for collection ${collectionId} (user: ${authInfo.extra.uid}).`,
+            text: "The Python Notebook launcher component has been loaded below. Inform the user they can click 'Open Notebook' or copy the notebook URL to continue their analysis in a live Python notebook environment.",
           },
         ],
         isError: false,

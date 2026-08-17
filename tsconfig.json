@@ -3,7 +3,9 @@
 
   "compilerOptions": {
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@nasa-terra/components/*": ["../terra-ui-components/dist/*"],
+      "@nasa-terra/components": ["../terra-ui-components/dist/index.d.ts"]
     }
   },
 

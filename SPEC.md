@@ -143,3 +143,19 @@ A modern, responsive, and interactive set of web views integrated into the AI as
 * **Decision**: Added `https://disc.gsfc.nasa.gov`, `https://disc.uat.gsfc.nasa.gov`, and proxy endpoints to `connectDomains`, and `https://tile.openstreetmap.org` to `resourceDomains` in csp.ts.
 * **Rationale**: Resolves Content Security Policy (CSP) violations when fetching dataset metadata and loading OpenStreetMap imagery tiles in the inline mapping and charting views.
 
+### Integration of `@nasa-terra/components` React Hooks (August 2026)
+* **Decision**: Integrated the newly exported React hooks `usePollHarmonyJobStatus`, `useCreateHarmonyJob`, and `useHarmonyRequest` from `@nasa-terra/components/dist/react/index.js` into the MCP frontend. Created `HarmonyJobStatusHeader` to display real-time progress, status badges, and inline job cancellation capabilities in `HarmonySubsetter`.
+* **Rationale**: Replaces manual status polling and custom state handling with standard, official React hooks from `@nasa-terra/components`, providing a consistent job status tracking UX across NASA Earthdata applications.
+
+### Explicit MCP Tool Output Schemas (August 2026)
+* **Decision**: Added `outputSchema` Zod definitions to all 6 registered MCP tools (`browse-data`, `search-collections`, `create-harmony-job`, `get-harmony-capabilities`, `show-time-series-plot`, `show-time-averaged-map`) in `src/schemas/` and `src/server.ts`.
+* **Rationale**: Ensures full compliance with the Model Context Protocol specification for tool output schemas, enabling MCP host clients and inspector devtools to validate structured responses.
+
+### Dedicated `open-in-notebook` MCP Tool & Session Generator (August 2026)
+* **Decision**: Replaced individual per-component "Open in Notebook" buttons with a dedicated `open-in-notebook` MCP tool, an in-memory session history manager (`src/utils/session-history.ts`), and an interactive Skybridge view widget (`src/views/open-in-notebook.tsx`).
+* **Rationale**: Cleans up individual view headers by removing button clutter, and enables multi-step notebook composition where a single tool call stitches together search (`earthaccess`), subsetting (`harmony-py`), and plotting (`xarray`/`matplotlib`) steps from the conversation session into a unified, runnable WASM Python notebook. User-facing UI elements utilize clean, vendor-neutral copy ("Open Notebook" / "Continue Analysis in a Notebook").
+
+
+
+
+
