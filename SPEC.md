@@ -155,6 +155,10 @@ A modern, responsive, and interactive set of web views integrated into the AI as
 * **Decision**: Replaced individual per-component "Open in Notebook" buttons with a dedicated `open-in-notebook` MCP tool, an in-memory session history manager (`src/utils/session-history.ts`), and an interactive Skybridge view widget (`src/views/open-in-notebook.tsx`).
 * **Rationale**: Cleans up individual view headers by removing button clutter, and enables multi-step notebook composition where a single tool call stitches together search (`earthaccess`), subsetting (`harmony-py`), and plotting (`xarray`/`matplotlib`) steps from the conversation session into a unified, runnable WASM Python notebook. User-facing UI elements utilize clean, vendor-neutral copy ("Open Notebook" / "Continue Analysis in a Notebook").
 
+### Search Collections Output Payload Sanitization (August 2026)
+* **Decision**: Introduced collection sanitization (`src/utils/collections.ts`) in the `search-collections` tool output to drop heavy unused metadata fields (such as multi-paragraph `abstract`, `related_urls`, `science_keywords`, and `data_centers`) and truncate long text summaries to ~300 characters.
+* **Rationale**: Prevents Skybridge model context overload (which was triggering 14,700+ token warning threshold alerts for 10-11 collection search results). Reduces structured content payload size by ~82-93% (~2,000 tokens) while preserving all properties required by the frontend UI cards and detail preview panel.
+
 
 
 

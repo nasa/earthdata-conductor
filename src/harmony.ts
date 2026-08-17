@@ -120,7 +120,7 @@ export async function fetchLatestGranulesDateRange(
   } finally {
     try {
       await mcpClient.close();
-    } catch (_) { }
+    } catch (_) {}
   }
   return "";
 }

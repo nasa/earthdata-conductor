@@ -8,9 +8,9 @@ export default defineConfig({
   plugins: [skybridge(), react(), tailwindcss()],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": path.resolve(import.meta.dirname, "./src"),
       "@nasa-terra/components": path.resolve(
-        __dirname,
+        import.meta.dirname,
         "../terra-ui-components",
       ),
     },

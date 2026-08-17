@@ -21,6 +21,7 @@ import { OpenInNotebookInputSchema } from "./schemas/open-in-notebook.schema.js"
 import { SearchCollectionsInputSchema } from "./schemas/search-collections.schema.js";
 import { TimeAveragedMapInputSchema } from "./schemas/time-averaged-map.schema.js";
 import { TimeSeriesPlotInputSchema } from "./schemas/time-series-plot.schema.js";
+import { sanitizeCollections } from "./utils/collections.js";
 import { generateMultiStepNotebook, getMarimoUrl } from "./utils/marimo.js";
 import { sessionHistory } from "./utils/session-history.js";
 
@@ -710,15 +711,17 @@ Please try the following:
         endDate,
       });
 
+      const sanitizedCollections = sanitizeCollections(collectionsList);
+
       return {
         structuredContent: {
           query: { keyword, spatialArea, spatialWkt, startDate, endDate },
-          collections: collectionsList,
+          collections: sanitizedCollections,
         },
         content: [
           {
             type: "text",
-            text: `Found ${collectionsList.length} collections matching '${keyword}'. The user is currently viewing these collections in an interactive search UI list. DO NOT summarize, list, or write out details of these collections in your response, as that would duplicate the user interface. Simply prompt the user to choose a dataset from the UI. If the user asks which dataset is recommended, recommend one or two collections based on their properties, but instruct the user to select them in the interactive UI to view details, configure variables, or subset. Do not list all options or write out details of other datasets.`,
+            text: `Found ${sanitizedCollections.length} collections matching '${keyword}'. The user is currently viewing these collections in an interactive search UI list. DO NOT summarize, list, or write out details of these collections in your response, as that would duplicate the user interface. Simply prompt the user to choose a dataset from the UI. If the user asks which dataset is recommended, recommend one or two collections based on their properties, but instruct the user to select them in the interactive UI to view details, configure variables, or subset. Do not list all options or write out details of other datasets.`,
           },
         ],
         isError: false,
