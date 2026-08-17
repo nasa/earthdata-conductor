@@ -13,6 +13,8 @@ A starter TypeScript template for building MCP and ChatGPT Apps with the [Skybri
 #### 1. Install
 
 ```bash
+cp .env.example .env # copy environment config over and fill out the AUTH_TOKEN with an Earthdata Login token
+
 npm install
 # or
 pnpm install
