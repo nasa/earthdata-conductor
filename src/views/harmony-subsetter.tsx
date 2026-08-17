@@ -1,10 +1,10 @@
 import TerraDataSubsetter from "@nasa-terra/components/dist/react/data-subsetter/index.js";
+import { useEffect, useRef } from "react";
+import { useOpenExternal } from "skybridge/web";
 import { useToolInfo } from "../helpers.js";
 import { HarmonyJobStatusHeader } from "./components/HarmonyJobStatusHeader.js";
 import TerraProvider from "./components/TerraProvider.js";
 import "@/index.css";
-import { useEffect, useRef } from "react";
-import { useOpenExternal } from "skybridge/web";
 
 export default function HarmonySubsetter() {
   const toolInfo = useToolInfo<"create-harmony-job">();
@@ -51,13 +51,17 @@ export default function HarmonySubsetter() {
       >
         <div className="relative overflow-hidden border-b border-zinc-200 dark:border-zinc-800 bg-linear-to-r from-indigo-50/50 via-white to-cyan-50/50 dark:from-indigo-950/20 dark:via-zinc-950 dark:to-cyan-950/20 p-6 mb-6 rounded-t-xl -mx-6 -mt-6">
           <div className="absolute top-0 left-0 h-[3px] w-full bg-linear-to-r from-indigo-500 via-purple-500 to-cyan-500" />
-          <h2 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
-            Harmony Data Subsetter
-          </h2>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-            Configure spatial, temporal, and variable filters to extract the
-            exact dataset you need.
-          </p>
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
+                Harmony Data Subsetter
+              </h2>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                Configure spatial, temporal, and variable filters to extract the
+                exact dataset you need.
+              </p>
+            </div>
+          </div>
         </div>
 
         {jobId ? (

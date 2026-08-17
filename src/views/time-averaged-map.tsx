@@ -13,7 +13,13 @@ export default function TimeAveragedMapView() {
 
   return (
     <TerraProvider>
-      <div className="w-full min-h-[450px]">
+      <div className="w-full min-h-[450px] flex flex-col gap-2">
+        <div className="flex items-center justify-between px-3 py-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xs">
+          <div className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+            Time-Averaged Map Visualization ({input.collection} -{" "}
+            {parsedVariable})
+          </div>
+        </div>
         {input.collection && parsedVariable ? (
           <TerraTimeAverageMap
             className="w-full h-full"

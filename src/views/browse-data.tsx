@@ -4,11 +4,11 @@ import {
   MapEventType,
 } from "@nasa-terra/components/dist/components/map/type.js";
 import TerraDataAccess from "@nasa-terra/components/dist/react/data-access/index.js";
+import { useEffect } from "react";
+import { useViewState } from "skybridge/web";
 import { useToolInfo } from "../helpers.js";
 import TerraProvider from "./components/TerraProvider.js";
 import "@/index.css";
-import { useEffect } from "react";
-import { useViewState } from "skybridge/web";
 
 const parseBboxFromWkt = (wkt?: string): number[] | undefined => {
   if (!wkt) return undefined;
@@ -53,11 +53,18 @@ export default function BrowseData() {
 
   return (
     <TerraProvider>
-      <TerraDataAccess
-        shortName={toolInfo.input?.shortName}
-        version={toolInfo.input?.version}
-        searchParams={searchParams}
-      ></TerraDataAccess>
+      <div className="w-full flex flex-col gap-2">
+        <div className="flex items-center justify-between px-3 py-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xs">
+          <div className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+            Archive Granule Access ({toolInfo.input?.shortName || "Dataset"})
+          </div>
+        </div>
+        <TerraDataAccess
+          shortName={toolInfo.input?.shortName}
+          version={toolInfo.input?.version}
+          searchParams={searchParams}
+        ></TerraDataAccess>
+      </div>
     </TerraProvider>
   );
 }

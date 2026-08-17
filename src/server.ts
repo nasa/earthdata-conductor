@@ -27,6 +27,10 @@ import {
   GetHarmonyCapabilitiesOutputSchema,
 } from "./schemas/get-harmony-capabilities.schema.js";
 import {
+  OpenInNotebookInputSchema,
+  OpenInNotebookOutputSchema,
+} from "./schemas/open-in-notebook.schema.js";
+import {
   SearchCollectionsInputSchema,
   SearchCollectionsOutputSchema,
 } from "./schemas/search-collections.schema.js";
@@ -38,6 +42,8 @@ import {
   TimeSeriesPlotInputSchema,
   TimeSeriesPlotOutputSchema,
 } from "./schemas/time-series-plot.schema.js";
+import { generateMultiStepNotebook, getMarimoUrl } from "./utils/marimo.js";
+import { sessionHistory } from "./utils/session-history.js";
 
 const server = new McpServer(
   {
@@ -213,6 +219,14 @@ const app = server
           console.error("Geocoding failed:", err);
         }
       }
+
+      sessionHistory.addStep("browse-data", {
+        shortName,
+        version,
+        spatialArea,
+        startDate,
+        endDate,
+      });
 
       return {
         structuredContent: {
@@ -707,6 +721,14 @@ Please try the following:
         };
       }
 
+      sessionHistory.addStep("search-collections", {
+        keyword,
+        spatialArea,
+        spatialWkt,
+        startDate,
+        endDate,
+      });
+
       return {
         structuredContent: {
           query: { keyword, spatialArea, spatialWkt, startDate, endDate },
@@ -825,6 +847,15 @@ Please try the following:
             isError: true,
           };
         }
+
+        sessionHistory.addStep("create-harmony-job", {
+          collectionId: conceptId,
+          variable: variableEntryId,
+          bbox: boundingBox,
+          startDate,
+          endDate,
+          format,
+        });
 
         return {
           structuredContent: {
@@ -992,6 +1023,7 @@ Please try the following:
     },
     async (params, extra) => {
       const authInfo = extra.authInfo as EarthdataAuthInfo | undefined;
+      sessionHistory.addStep("time-series-plot", { ...params });
       return {
         structuredContent: {
           ...params,
@@ -1035,6 +1067,7 @@ Please try the following:
     },
     async (params, extra) => {
       const authInfo = extra.authInfo as EarthdataAuthInfo | undefined;
+      sessionHistory.addStep("time-averaged-map", { ...params });
       return {
         structuredContent: {
           ...params,
@@ -1044,6 +1077,53 @@ Please try the following:
           {
             type: "text",
             text: `The Time-Averaged Map Plot has been loaded in the interactive UI component below for collection '${params.collection}' and variable '${params.variable}' over location '${params.location}'. Instruct the user to interact with the map directly in the UI panel. Do not summarize or write out duplicate map details.`,
+          },
+        ],
+        isError: false,
+      };
+    },
+  )
+  .registerTool(
+    {
+      name: "open-in-notebook",
+      description:
+        "Export the current conversation session or NASA dataset workflow into an interactive Python notebook runnable directly in a live notebook environment. This gathers search, subsetting, and visualization steps performed so far.",
+      inputSchema: OpenInNotebookInputSchema.shape,
+      outputSchema: OpenInNotebookOutputSchema.shape,
+      securitySchemes,
+      annotations: {
+        title: "Continue Analysis in a Notebook",
+        readOnlyHint: true,
+        destructiveHint: false,
+        openWorldHint: false,
+      },
+      _meta: {
+        "openai/toolInvocation/invoking":
+          "📓 Generating Python analysis notebook...",
+        "openai/toolInvocation/invoked": "Python notebook ready.",
+      },
+      view: {
+        component: "open-in-notebook",
+        domain: "https://nasa.gov",
+        description: "Interactive Python Notebook Launcher",
+        csp,
+      },
+    },
+    async (params) => {
+      const steps = sessionHistory.getSteps();
+      const pythonCode = generateMultiStepNotebook(steps, params);
+      const marimoUrl = getMarimoUrl(pythonCode);
+
+      return {
+        structuredContent: {
+          marimoUrl,
+          pythonCode,
+          stepCount: steps.length,
+        },
+        content: [
+          {
+            type: "text",
+            text: "The Python Notebook launcher component has been loaded below. Inform the user they can click 'Open Notebook' or copy the notebook URL to continue their analysis in a live Python notebook environment.",
           },
         ],
         isError: false,
