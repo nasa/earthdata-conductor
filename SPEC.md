@@ -61,20 +61,20 @@ A modern, responsive, and interactive set of web views integrated into the AI as
   - [x] Mixed-auth middleware allowing public search and authenticated actions.
   - [x] Custom token verification against Earthdata Login's token user validation endpoint.
 
-* **Harmony Subsetting Integration** (Planned):
-  - [ ] **Job Creation Tool**: Create a Harmony subsetting job on behalf of the user to generate a job ID. (Mock skeleton added).
-  - [ ] **Harmony Subsetter View**: Load the Harmony subsetter UI component pre-populated with the generated job ID.
+* **Harmony Subsetting Integration** (Completed):
+  - [x] **Job Creation Tool**: Create a Harmony subsetting job on behalf of the user to generate a job ID.
+  - [x] **Harmony Subsetter View**: Load the Harmony subsetter UI component pre-populated with the generated job ID.
 
 * **UI/Component Enhancements** (Planned):
-  - [ ] **Dataset Chooser Component**: A streamlined widget for selecting and switching between active datasets.
-  - [ ] **Output Format Component**: Elegant UI to select output formats (e.g. NetCDF), select granules, view estimated download sizes, and run the transformation.
-  - [ ] **Parameter Mapping**: Ensure the Data Access component accepts spatial, temporal, and other subsetting constraints.
+  - [x] **Dataset Chooser Component**: A streamlined widget for selecting and switching between active datasets (Completed).
+  - [x] **Output Format Component**: Elegant UI to select output formats (e.g. NetCDF), select variables, and run the transformation (Completed).
+  - [x] **Parameter Mapping**: Ensure the Data Access component accepts spatial, temporal, and other subsetting constraints (Completed).
   - [ ] **Browser-side Subsetter**: Configure the Subsetter component to handle Harmony wrangling directly in the user's browser and trigger a completion event when done.
 
-* **Visualization & Analysis** (Planned):
-  - [ ] **Area-averaged Time Series Plots**: Generate inline charts of area-averaged temporal trends.
-  - [ ] **Area-averaged Map Plots**: Display mapped spatial representations of subsetted data.
-  - [ ] **Giovanni Integration**: Render Giovanni time-series and spatial maps.
+* **Visualization & Analysis** (Completed):
+  - [x] **Area-averaged Time Series Plots**: Generate inline charts of area-averaged temporal trends using the `show-time-series-plot` tool.
+  - [x] **Area-averaged Map Plots**: Display mapped spatial representations of subsetted data using the `show-time-averaged-map` tool.
+  - [x] **Giovanni Integration**: Render Giovanni time-series and spatial maps.
 
 ---
 
@@ -97,6 +97,49 @@ A modern, responsive, and interactive set of web views integrated into the AI as
 * **Rationale**: Keep the UI framework up to date with the latest features, enhancements, and bug fixes from Skybridge, while resolving any static analysis/linting issues with type-safety updates.
 
 ### NASA Earthdata Login OAuth Integration (July 2026)
-* **Decision**: Configured Skybridge's OAuth metadata router and optional Bearer token middleware with Earthdata Login as the Identity Provider. Added a custom validation handler querying URS's `/oauth/tokens/user` endpoint.
-* **Rationale**: Enables secure user authentication. Mixed-auth routing allows discovery tools (`search-collections`, `browse-data`) to run anonymously while requiring sign-in for transformation and Harmony subsetting actions.
+* **Decision**: Configured Skybridge's OAuth metadata router and required Bearer token middleware (`requireBearerAuth`) with Earthdata Login as the Identity Provider. Added a custom validation handler querying URS's `/oauth/tokens/user` endpoint.
+* **Rationale**: Enforces global authentication. Restricting all tool access (search, browse, capabilities, subsetting) to `oauth2` and using `requireBearerAuth` ensures the user logs in once at the start of the session and all subsequent actions run with a validated token automatically.
+
+### Harmony Subsetting Integration (July 2026)
+* **Decision**: Implemented the `create-harmony-job` tool using direct NASA Harmony OGC Coverages API requests, and registered a new view component `harmony-subsetter` using `@nasa-terra/components`'s `TerraDataSubsetter`.
+* **Rationale**: Replaces mock job IDs with real, authenticated jobs generated on behalf of the user, and loads the official subsetter component pre-populated with the Job ID and OAuth token for seamless download and status tracking.
+
+### Harmony Capabilities & Variable-First UI Flow (July 2026)
+* **Decision**: Created the `get-harmony-capabilities` tool and updated the `SearchCollections` UI detail column to render Action Tabs (Browse Files, Subset Data, Plot Data) dynamically based on collection capabilities.
+* **Rationale**: Decouples dataset exploration from subsetting details, allowing the user to browse variables, check constraints, select output formats, and create subsetting jobs with a single click.
+### Granule-Aware Harmony Job Creation Error Fallback (July 2026)
+* **Decision**: Configured the `create-harmony-job` tool handler on the server to catch job submission failures, fetch the latest 10 granules for the target collection from the remote UAT MCP server using the `get_granules` tool, and inject the range of available dates directly into the returned error message.
+* **Rationale**: Eliminates blind date-range guessing by the assistant or the user when Harmony subsetting fails due to UAT archive sparse date coverage.
+
+### Data Access Parameter Mapping with LatLngBounds (July 2026)
+* **Decision**: Mapped `startDate`, `endDate`, and parsed geographic bounding box coordinates (as `LatLngBounds`) to the `<TerraDataAccess>` `searchParams` property in the React `browse-data` view.
+* **Rationale**: Resolves empty file list displays by pre-filtering granule queries to the user's actual area of interest and selected timeframe.
+
+### Optional Authentication for Local Development (July 2026)
+* **Decision**: Added support for the `AUTH_TOKEN` environment variable override. When defined, all registered tools omit `oauth2` from their security schemes, and the `/mcp` middleware automatically bypasses standard token verification to inject a mock auth context using that static token.
+* **Rationale**: Simplifies development and debugging in local environments by making OAuth sign-in optional, allowing direct test requests to execute with the configured static Bearer token.
+
+### Client-Triggered Follow-Up Message Navigation (July 2026)
+* **Decision**: Refactored the interactive buttons in the `search-collections` view (Browse Original Files and Subset & Transform) to use `useSendFollowUpMessage` instead of calling `useCallTool` directly.
+* **Rationale**: Bypasses the MCP host iframe isolation by programmatically asking the LLM to invoke the corresponding view-enabled tools, ensuring that the host chat client successfully transitions the user to the `browse-data` and `harmony-subsetter` views.
+
+### Server-Side Keyword Fallback & Granule Filtering Relaxing (July 2026)
+* **Decision**: Implemented an automatic keyword extraction fallback in the `search-collections` tool and modified the granule availability check to assign `granule_count: 0` instead of filtering out collections with empty subsets.
+* **Rationale**: Prevents zero-result search displays in sparse test environments like UAT, allowing users to find datasets even when entering long conversational queries or select temporal ranges for which no granules are currently archived.
+
+### Variable-First Searching & Recommendations (July 2026)
+* **Decision**: Designed and built a query-aware recommendation algorithm on the client side that categorizes and matches collection variables (e.g., wind speed, temperature, humidity, precipitation) against the user's initial search query.
+* **Rationale**: Simplifies data exploration for non-technical users by highlighting matching variables, describing why they are recommended, sorting them to the top of the selection lists, and pre-selecting the best option by default.
+
+### Giovanni Visualizations: Time-Series Plots & Time-Averaged Maps (July 2026)
+* **Decision**: Implemented two new MCP tools `show-time-series-plot` and `show-time-averaged-map` along with corresponding React views rendering NASA's custom `<terra-time-series>` and `<terra-time-average-map>` web components. Added buttons to the search collections details panel under the "Plot Data" tab to trigger these tools.
+* **Rationale**: Enables users to seamlessly visualize subsetted datasets inline in their chat session. Resolves parameters (collection version format, variable names, dates, coordinates) dynamically from client search state to pass accurate bounds automatically.
+
+### Search Results Caching & Resolved Query Parameters (July 2026)
+* **Decision**: Added a local cache state `cachedCollections` for results, added a loading check `!output`, and merged `toolInfo.input` with `toolInfo.output.query` into a single `query` object in the `search-collections` view.
+* **Rationale**: Prevents search results from disappearing and flashing a "No Datasets Found" message during background requests, and ensures that the client correctly uses the server-resolved query parameters (like the geocoded or overridden bounding box WKT) instead of falling back to default global coordinates.
+
+### GES DISC & Map Tiles Content Security Policy (July 2026)
+* **Decision**: Added `https://disc.gsfc.nasa.gov`, `https://disc.uat.gsfc.nasa.gov`, and proxy endpoints to `connectDomains`, and `https://tile.openstreetmap.org` to `resourceDomains` in [csp.ts](file:///Users/joncarlson/projects/earthdata-ui-mcp/src/csp.ts).
+* **Rationale**: Resolves Content Security Policy (CSP) violations when fetching dataset metadata and loading OpenStreetMap imagery tiles in the inline mapping and charting views.
 

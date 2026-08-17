@@ -12,6 +12,21 @@ export interface EarthdataAuthInfo extends AuthInfo {
 export async function verifyAccessToken(
   token: string,
 ): Promise<EarthdataAuthInfo> {
+  if (process.env.AUTH_TOKEN && token === process.env.AUTH_TOKEN) {
+    return {
+      token,
+      clientId: process.env.EARTHDATA_CLIENT_ID || "mock-client-id",
+      scopes: [],
+      expiresAt: Math.floor(Date.now() / 1000) + 3600 * 24 * 365, // 1 year expiry
+      extra: {
+        uid: "localdev",
+        first_name: "Local",
+        last_name: "Dev",
+        email_address: "localdev@earthdata.nasa.gov",
+      },
+    };
+  }
+
   const serverUrl =
     process.env.EARTHDATA_SERVER_URL || "https://uat.urs.earthdata.nasa.gov";
   const clientId = process.env.EARTHDATA_CLIENT_ID;

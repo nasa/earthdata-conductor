@@ -4,7 +4,7 @@ export const SearchCollectionsInputSchema = z.object({
   keyword: z
     .string()
     .describe(
-      "The search term or topic (e.g., 'precipitation', 'soil moisture', 'sea surface temperature')",
+      "The search term or topic representing physical phenomena (e.g., 'wind speed', 'precipitation', 'temperature', 'soil moisture'). IMPORTANT: Do NOT include event names (like 'Hurricane Melissa' or 'LA wildfires') or place names (like 'Jamaica' or 'Virginia') in this keyword; extract only the physical parameters/science variables to measure.",
     ),
   spatialArea: z
     .string()
