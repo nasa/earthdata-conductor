@@ -19,7 +19,7 @@ import { SearchCollectionsInputSchema } from "./schemas/search-collections.schem
 
 const server = new McpServer(
   {
-    name: "earthdata-ui-mcp",
+    name: "earthdata-conductor",
     version: "0.0.1",
   },
   { capabilities: {} },
@@ -119,7 +119,7 @@ const server = new McpServer(
           const geoRes = await fetch(url, {
             headers: {
               "User-Agent":
-                "earthdata-ui-mcp/0.0.1 (contact: nasa-mcp-integration)",
+                "earthdata-conductor/0.0.1 (contact: nasa-mcp-integration)",
             },
           });
           if (geoRes.ok) {
@@ -174,7 +174,7 @@ const server = new McpServer(
 
       // 3. Connect to Earthdata MCP UAT and call get_collections
       const mcpClient = new Client(
-        { name: "earthdata-ui-mcp-client", version: "0.0.1" },
+        { name: "earthdata-conductor-client", version: "0.0.1" },
         { capabilities: {} },
       );
       const transport = new StreamableHTTPClientTransport(

@@ -1,5 +1,5 @@
 {
-  "name": "earthdata-ui-mcp",
+  "name": "earthdata-conductor",
   "version": "0.0.2",
   "private": true,
   "description": "Alpic MCP Server Template",
@@ -47,5 +47,10 @@
   },
   "engines": {
     "node": ">=24.14.1"
+  },
+  "allowScripts": {
+    "esbuild@0.27.7": true,
+    "esbuild@0.28.1": true,
+    "fsevents@2.3.3": true
   }
 }

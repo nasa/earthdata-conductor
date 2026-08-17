@@ -1,4 +1,4 @@
-# Earthdata UI MCP Server (earthdata-ui-mcp)
+# Earthdata Conductor
 
 ## Value Proposition
 A modern, responsive, and interactive set of web views integrated into the AI assistant workspace via the Skybridge framework. It enables users to discover, search, browse, and transform NASA Earthdata datasets (collections and granules) directly inside the chat interface.
