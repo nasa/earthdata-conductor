@@ -76,7 +76,7 @@ export async function fetchLatestGranulesDateRange(
   conceptId: string,
 ): Promise<string> {
   const mcpClient = new Client(
-    { name: "earthdata-ui-mcp-client", version: "0.0.1" },
+    { name: "earthdata-conductor-client", version: "0.0.1" },
     { capabilities: {} },
   );
   const transport = new StreamableHTTPClientTransport(
@@ -120,7 +120,7 @@ export async function fetchLatestGranulesDateRange(
   } finally {
     try {
       await mcpClient.close();
-    } catch (_) {}
+    } catch (_) { }
   }
   return "";
 }

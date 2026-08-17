@@ -140,6 +140,6 @@ A modern, responsive, and interactive set of web views integrated into the AI as
 * **Rationale**: Prevents search results from disappearing and flashing a "No Datasets Found" message during background requests, and ensures that the client correctly uses the server-resolved query parameters (like the geocoded or overridden bounding box WKT) instead of falling back to default global coordinates.
 
 ### GES DISC & Map Tiles Content Security Policy (July 2026)
-* **Decision**: Added `https://disc.gsfc.nasa.gov`, `https://disc.uat.gsfc.nasa.gov`, and proxy endpoints to `connectDomains`, and `https://tile.openstreetmap.org` to `resourceDomains` in [csp.ts](file:///Users/joncarlson/projects/earthdata-ui-mcp/src/csp.ts).
+* **Decision**: Added `https://disc.gsfc.nasa.gov`, `https://disc.uat.gsfc.nasa.gov`, and proxy endpoints to `connectDomains`, and `https://tile.openstreetmap.org` to `resourceDomains` in csp.ts.
 * **Rationale**: Resolves Content Security Policy (CSP) violations when fetching dataset metadata and loading OpenStreetMap imagery tiles in the inline mapping and charting views.
 
