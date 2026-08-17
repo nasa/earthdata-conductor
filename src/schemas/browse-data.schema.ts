@@ -24,15 +24,17 @@ export const BrowseDataInputSchema = z.object({
     .describe("The end date of the time range to filter granules"),
 });
 
-export const BrowseDataOutputSchema = z.object({
-  shortName: z.string().optional(),
-  version: z.string().optional(),
-  spatialArea: z.string().optional(),
-  spatialWkt: z.string().optional(),
-  startDate: z.string().optional(),
-  endDate: z.string().optional(),
-  bearerToken: z.string().optional(),
-});
+export const BrowseDataOutputSchema = z
+  .object({
+    shortName: z.string().optional(),
+    version: z.string().optional(),
+    spatialArea: z.string().optional(),
+    spatialWkt: z.string().optional(),
+    startDate: z.string().optional(),
+    endDate: z.string().optional(),
+    bearerToken: z.string().optional(),
+  })
+  .passthrough();
 
 export type BrowseDataInput = z.infer<typeof BrowseDataInputSchema>;
 export type BrowseDataOutput = z.infer<typeof BrowseDataOutputSchema>;

@@ -20,15 +20,17 @@ export const TimeSeriesPlotInputSchema = z.object({
     ),
 });
 
-export const TimeSeriesPlotOutputSchema = z.object({
-  shortName: z.string().optional(),
-  version: z.string().optional(),
-  variable: z.string().optional(),
-  startDate: z.string().optional(),
-  endDate: z.string().optional(),
-  location: z.string().optional(),
-  bearerToken: z.string().optional(),
-});
+export const TimeSeriesPlotOutputSchema = z
+  .object({
+    shortName: z.string().optional(),
+    version: z.string().optional(),
+    variable: z.string().optional(),
+    startDate: z.string().optional(),
+    endDate: z.string().optional(),
+    location: z.string().optional(),
+    bearerToken: z.string().optional(),
+  })
+  .passthrough();
 
 export type TimeSeriesPlotInput = z.infer<typeof TimeSeriesPlotInputSchema>;
 export type TimeSeriesPlotOutput = z.infer<typeof TimeSeriesPlotOutputSchema>;

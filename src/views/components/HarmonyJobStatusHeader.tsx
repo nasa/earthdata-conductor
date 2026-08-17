@@ -1,4 +1,4 @@
-import { usePollHarmonyJobStatus } from "@nasa-terra/components/dist/react/hooks/index.js";
+import { usePollHarmonyJobStatus } from "@nasa-terra/components/dist/react/index.js";
 import {
   AlertCircle,
   CheckCircle2,

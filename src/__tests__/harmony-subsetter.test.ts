@@ -3,7 +3,7 @@ import {
   useCreateHarmonyJob,
   useHarmonyRequest,
   usePollHarmonyJobStatus,
-} from "@nasa-terra/components/dist/react/hooks/index.js";
+} from "@nasa-terra/components/dist/react/index.js";
 import { describe, expect, it } from "vitest";
 
 describe("Harmony Subsetter & React Hooks Integration", () => {

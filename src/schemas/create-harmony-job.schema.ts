@@ -30,19 +30,22 @@ export const CreateHarmonyJobInputSchema = z.object({
     .describe("The output format (e.g., 'application/netcdf')"),
 });
 
-export const CreateHarmonyJobOutputSchema = z.object({
-  jobId: z.string().optional(),
-  status: z.string().optional(),
-  shortName: z.string().optional(),
-  bearerToken: z.string().optional(),
-  error: z.string().optional(),
-  availableDateRange: z
-    .object({
-      start: z.string().optional(),
-      end: z.string().optional(),
-    })
-    .optional(),
-});
+export const CreateHarmonyJobOutputSchema = z
+  .object({
+    jobId: z.string().optional(),
+    status: z.string().optional(),
+    shortName: z.string().optional(),
+    bearerToken: z.string().optional(),
+    error: z.string().optional(),
+    availableDateRange: z
+      .object({
+        start: z.string().optional(),
+        end: z.string().optional(),
+      })
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
 
 export type CreateHarmonyJobInput = z.infer<typeof CreateHarmonyJobInputSchema>;
 export type CreateHarmonyJobOutput = z.infer<

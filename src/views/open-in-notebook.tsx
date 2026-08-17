@@ -36,7 +36,7 @@ export default function OpenInNotebook() {
   return (
     <TerraProvider>
       <div className="p-4 max-w-4xl mx-auto space-y-4 font-sans">
-        <TerraAlert variant="info">
+        <TerraAlert variant="information">
           Your Python notebook is ready. Continue your data analysis in a live
           interactive Python notebook environment or copy the link below.
         </TerraAlert>
@@ -59,7 +59,7 @@ export default function OpenInNotebook() {
               </div>
             </div>
             {stepCount > 0 && (
-              <TerraBadge variant="info">
+              <TerraBadge variant="information">
                 {stepCount} Workflow Step{stepCount > 1 ? "s" : ""}
               </TerraBadge>
             )}
