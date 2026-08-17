@@ -151,6 +151,10 @@ const securitySchemes = process.env.AUTH_TOKEN
   ? []
   : [{ type: "oauth2" as const }];
 
+const widgetDomain =
+  process.env.WIDGET_DOMAIN ||
+  (process.env.NODE_ENV === "production" ? "https://nasa.gov" : "*");
+
 const app = server
   .registerTool(
     {
@@ -172,7 +176,7 @@ const app = server
       },
       view: {
         component: "browse-data",
-        domain: "https://nasa.gov", // TODO: replace with URL the widget will be served from in production
+        domain: widgetDomain,
         description: "Browse data files directly from the archive.",
         csp,
       },
@@ -263,7 +267,7 @@ const app = server
       },
       view: {
         component: "search-collections",
-        domain: "https://nasa.gov",
+        domain: widgetDomain,
         description: "Search and choose datasets.",
         csp,
       },
@@ -765,8 +769,8 @@ Please try the following:
       },
       view: {
         component: "harmony-subsetter",
-        domain: "https://nasa.gov",
-        description: "Harmony Subsetting View",
+        domain: widgetDomain,
+        description: "Harmony Subsetting Job Tracker & Data Access",
         csp,
       },
     },
@@ -1016,7 +1020,7 @@ Please try the following:
       },
       view: {
         component: "time-series-plot",
-        domain: "https://nasa.gov",
+        domain: widgetDomain,
         description: "Area-averaged Time Series Plot",
         csp,
       },
@@ -1060,7 +1064,7 @@ Please try the following:
       },
       view: {
         component: "time-averaged-map",
-        domain: "https://nasa.gov",
+        domain: widgetDomain,
         description: "Time-averaged Map Plot",
         csp,
       },
@@ -1104,7 +1108,7 @@ Please try the following:
       },
       view: {
         component: "open-in-notebook",
-        domain: "https://nasa.gov",
+        domain: widgetDomain,
         description: "Interactive Python Notebook Launcher",
         csp,
       },
