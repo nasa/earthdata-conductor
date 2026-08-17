@@ -1090,8 +1090,9 @@ Please try the following:
     },
     async (params) => {
       const steps = sessionHistory.getSteps();
-      const pythonCode = generateMultiStepNotebook(steps, params);
-      const marimoUrl = getMarimoUrl(pythonCode);
+      const wasm = params.wasm ?? false;
+      const pythonCode = generateMultiStepNotebook(steps, params, wasm);
+      const marimoUrl = getMarimoUrl(pythonCode, wasm);
 
       return {
         structuredContent: {

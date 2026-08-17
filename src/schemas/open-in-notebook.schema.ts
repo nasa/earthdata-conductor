@@ -10,6 +10,12 @@ export const OpenInNotebookInputSchema = z.object({
   startDate: z.string().optional().describe("Optional start date filter"),
   endDate: z.string().optional().describe("Optional end date filter"),
   variable: z.string().optional().describe("Optional variable name"),
+  wasm: z
+    .boolean()
+    .optional()
+    .describe(
+      "Run the notebook in the browser-based WASM runtime instead of a standard Python kernel. Defaults to false.",
+    ),
 });
 
 export const OpenInNotebookOutputSchema = z
