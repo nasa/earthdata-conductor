@@ -22,6 +22,7 @@ export const TimeAveragedMapInputSchema = z.object({
 
 export const TimeAveragedMapOutputSchema = z
   .object({
+    collection: z.string().optional(),
     shortName: z.string().optional(),
     version: z.string().optional(),
     variable: z.string().optional(),

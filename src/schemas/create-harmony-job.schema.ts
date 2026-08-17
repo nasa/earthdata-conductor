@@ -36,6 +36,9 @@ export const CreateHarmonyJobOutputSchema = z
     status: z.string().optional(),
     shortName: z.string().optional(),
     bearerToken: z.string().optional(),
+    user: z.string().optional(),
+    conceptId: z.string().optional(),
+    variableEntryId: z.string().optional(),
     error: z.string().optional(),
     availableDateRange: z
       .object({

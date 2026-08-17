@@ -22,6 +22,7 @@ export const TimeSeriesPlotInputSchema = z.object({
 
 export const TimeSeriesPlotOutputSchema = z
   .object({
+    collection: z.string().optional(),
     shortName: z.string().optional(),
     version: z.string().optional(),
     variable: z.string().optional(),
