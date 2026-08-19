@@ -159,6 +159,11 @@ A modern, responsive, and interactive set of web views integrated into the AI as
 * **Decision**: Introduced collection sanitization (`src/utils/collections.ts`) in the `search-collections` tool output to drop heavy unused metadata fields (such as multi-paragraph `abstract`, `related_urls`, `science_keywords`, and `data_centers`) and truncate long text summaries to ~300 characters.
 * **Rationale**: Prevents Skybridge model context overload (which was triggering 14,700+ token warning threshold alerts for 10-11 collection search results). Reduces structured content payload size by ~82-93% (~2,000 tokens) while preserving all properties required by the frontend UI cards and detail preview panel.
 
+### Generic WMS/GeoTIFF Map React Component & NASA FIRMS Active Fire Detection Tool (August 2026)
+* **Decision**: Designed and implemented a unified generic Map React component (`map-view.tsx`) using OpenLayers (`ol`), alongside three new MCP tools: `get-active-fire-detections` (NASA FIRMS thermal anomalies API adapter), `show-wms-map` (WMS tile layers), and `show-geotiff-map` (GeoTIFF/COG rasters).
+* **Rationale**: Decouples map visualization from dataset-specific search formats. Allows real-time event observation (active fires) and general GIS imagery overlay rendering across NASA FIRMS, GIBS, and user-provided WMS/GeoTIFF sources. Integrated OpenLayers layer switching (Street, Satellite, Dark), FRP detection statistics, feature inspection popovers, and interactive notebook generators.
+
+
 
 
 

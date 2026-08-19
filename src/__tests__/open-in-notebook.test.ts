@@ -59,11 +59,11 @@ describe("Session History & Open in Notebook Generator", () => {
     expect(code).toContain('short_name="GPM_3IMERGDF"');
   });
 
-  it("should compress multi-step notebook code into a valid WASM URL", () => {
+  it("should compress multi-step notebook code into a valid marimo URL", () => {
     const code = generateMultiStepNotebook([]);
     const url = getMarimoUrl(code);
 
-    expect(url).toContain("https://molab.marimo.io/new/wasm/?edit=true#code/");
+    expect(url).toContain("https://molab.marimo.io/new/?edit=true#code/");
   });
 
   it("should validate input and output schemas", () => {

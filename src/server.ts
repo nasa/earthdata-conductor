@@ -16,12 +16,17 @@ import {
 } from "./harmony.js";
 import { BrowseDataInputSchema } from "./schemas/browse-data.schema.js";
 import { CreateHarmonyJobInputSchema } from "./schemas/create-harmony-job.schema.js";
+import { GetActiveFireDetectionsInputSchema } from "./schemas/get-active-fire-detections.schema.js";
 import { GetHarmonyCapabilitiesInputSchema } from "./schemas/get-harmony-capabilities.schema.js";
 import { OpenInNotebookInputSchema } from "./schemas/open-in-notebook.schema.js";
 import { SearchCollectionsInputSchema } from "./schemas/search-collections.schema.js";
+import { ShowGeotiffMapInputSchema } from "./schemas/show-geotiff-map.schema.js";
+import { ShowWmsMapInputSchema } from "./schemas/show-wms-map.schema.js";
 import { TimeAveragedMapInputSchema } from "./schemas/time-averaged-map.schema.js";
 import { TimeSeriesPlotInputSchema } from "./schemas/time-series-plot.schema.js";
 import { sanitizeCollections } from "./utils/collections.js";
+import { fetchFirmsActiveFires } from "./utils/firms.js";
+import { geocodeToBbox } from "./utils/geocoding.js";
 import { generateMultiStepNotebook, getMarimoUrl } from "./utils/marimo.js";
 import { sessionHistory } from "./utils/session-history.js";
 
@@ -1065,6 +1070,155 @@ Please try the following:
   )
   .registerTool(
     {
+      name: "get-active-fire-detections",
+      description:
+        "Fetch thermal anomaly / active fire satellite detections from NASA FIRMS (VIIRS, MODIS, Landsat). Accepts geographic area name or bounding box [west, south, east, north]. Renders an interactive fire map UI with point markers, confidence badges, FRP power metrics, and WMS imagery layer overlay. Keep text response extremely brief.",
+      inputSchema: GetActiveFireDetectionsInputSchema.shape,
+      securitySchemes,
+      annotations: {
+        title: "Get Active Fire Detections",
+        readOnlyHint: true,
+        destructiveHint: false,
+        openWorldHint: false,
+      },
+      _meta: {
+        "openai/toolInvocation/invoking":
+          "🔥 Querying NASA FIRMS active fire detections...",
+        "openai/toolInvocation/invoked":
+          "Active fire detections loaded successfully.",
+      },
+      view: {
+        component: "get-active-fire-detections",
+        domain: widgetDomain,
+        description: "Interactive Active Fire Map View",
+        csp,
+      },
+    },
+    async (params, extra) => {
+      const authInfo = extra.authInfo as EarthdataAuthInfo | undefined;
+      let bbox = params.bbox as [number, number, number, number] | undefined;
+
+      if (!bbox && params.spatialArea) {
+        bbox = (await geocodeToBbox(params.spatialArea)) || undefined;
+      }
+      if (!bbox) {
+        bbox = [-125, 24, -66, 49];
+      }
+
+      const result = await fetchFirmsActiveFires({
+        bbox,
+        days: params.days,
+        source: params.source,
+        date: params.date,
+      });
+
+      sessionHistory.addStep("get-active-fire-detections", { ...params, bbox });
+
+      return {
+        structuredContent: {
+          ...result,
+          spatialArea: params.spatialArea,
+          bbox,
+          bearerToken: authInfo?.token,
+        },
+        content: [
+          {
+            type: "text",
+            text: `Retrieved ${result.detectionCount} active fire detection(s) from NASA FIRMS (${result.source}) over bbox [${bbox.join(", ")}]. The interactive fire map component has been loaded below. Instruct the user to interact with the map directly in the UI panel. Do not summarize or write out duplicate map details.`,
+          },
+        ],
+        isError: false,
+      };
+    },
+  )
+  .registerTool(
+    {
+      name: "show-wms-map",
+      description:
+        "Display a Web Map Service (WMS) tile layer (e.g. from NASA GIBS, FIRMS, or custom WMS endpoints) over a geographical region and optional timestamp in an interactive map component.",
+      inputSchema: ShowWmsMapInputSchema.shape,
+      securitySchemes,
+      annotations: {
+        title: "Show WMS Map Layer",
+        readOnlyHint: true,
+        destructiveHint: false,
+        openWorldHint: false,
+      },
+      _meta: {
+        "openai/toolInvocation/invoking": "🗺️ Rendering WMS map layer...",
+        "openai/toolInvocation/invoked": "WMS map layer loaded.",
+      },
+      view: {
+        component: "show-wms-map",
+        domain: widgetDomain,
+        description: "Interactive WMS Map Layer",
+        csp,
+      },
+    },
+    async (params, extra) => {
+      const authInfo = extra.authInfo as EarthdataAuthInfo | undefined;
+      sessionHistory.addStep("show-wms-map", { ...params });
+
+      return {
+        structuredContent: {
+          ...params,
+          bearerToken: authInfo?.token,
+        },
+        content: [
+          {
+            type: "text",
+            text: `The WMS layer '${params.layers}' from '${params.wmsUrl}' has been loaded in the interactive map view below. Instruct the user to interact with the map directly in the UI panel. Do not summarize or write out duplicate map details.`,
+          },
+        ],
+        isError: false,
+      };
+    },
+  )
+  .registerTool(
+    {
+      name: "show-geotiff-map",
+      description:
+        "Display a GeoTIFF or Cloud-Optimized GeoTIFF (COG) raster map layer directly in an interactive OpenLayers canvas view.",
+      inputSchema: ShowGeotiffMapInputSchema.shape,
+      securitySchemes,
+      annotations: {
+        title: "Show GeoTIFF Map Layer",
+        readOnlyHint: true,
+        destructiveHint: false,
+        openWorldHint: false,
+      },
+      _meta: {
+        "openai/toolInvocation/invoking": "🌐 Loading GeoTIFF raster map...",
+        "openai/toolInvocation/invoked": "GeoTIFF map loaded.",
+      },
+      view: {
+        component: "show-geotiff-map",
+        domain: widgetDomain,
+        description: "Interactive GeoTIFF Map View",
+        csp,
+      },
+    },
+    async (params, extra) => {
+      const authInfo = extra.authInfo as EarthdataAuthInfo | undefined;
+      sessionHistory.addStep("show-geotiff-map", { ...params });
+
+      return {
+        structuredContent: {
+          ...params,
+          bearerToken: authInfo?.token,
+        },
+        content: [
+          {
+            type: "text",
+            text: `The GeoTIFF map from '${params.url}' has been loaded in the interactive map view below. Instruct the user to interact with the map directly in the UI panel. Do not summarize or write out duplicate map details.`,
+          },
+        ],
+        isError: false,
+      };
+    },
+  )
+  .registerTool(
+    {
       name: "open-in-notebook",
       description:
         "Export the current conversation session or NASA dataset workflow into an interactive Python notebook runnable directly in a live notebook environment. This gathers search, subsetting, and visualization steps performed so far.",
@@ -1090,8 +1244,9 @@ Please try the following:
     },
     async (params) => {
       const steps = sessionHistory.getSteps();
-      const pythonCode = generateMultiStepNotebook(steps, params);
-      const marimoUrl = getMarimoUrl(pythonCode);
+      const wasm = params.wasm ?? false;
+      const pythonCode = generateMultiStepNotebook(steps, params, wasm);
+      const marimoUrl = getMarimoUrl(pythonCode, wasm);
 
       return {
         structuredContent: {
