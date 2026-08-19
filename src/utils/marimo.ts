@@ -26,36 +26,82 @@ export function generateMultiStepNotebook(
 ): string {
   const cells: string[] = [];
 
+  const needsEarthaccess =
+    steps.length === 0 ||
+    steps.some((s) =>
+      [
+        "search-collections",
+        "browse-data",
+        "create-harmony-job",
+        "time-series-plot",
+        "time-averaged-map",
+      ].includes(s.toolName),
+    );
+
+  const needsXarrayPlot =
+    steps.length === 0 ||
+    steps.some((s) =>
+      [
+        "search-collections",
+        "browse-data",
+        "create-harmony-job",
+        "time-series-plot",
+        "time-averaged-map",
+      ].includes(s.toolName),
+    );
+
   // Setup cell 1 (WASM only): micropip installs deps the browser runtime lacks
   if (wasm) {
+    const micropipDeps: string[] = [
+      "pandas",
+      "requests",
+      "folium",
+      "rioxarray",
+    ];
+
+    if (needsEarthaccess) {
+      micropipDeps.unshift(
+        "aiobotocore==3.8.0",
+        "earthaccess==0.18.0",
+        "harmony-py==1.6.0",
+      );
+    }
+
     cells.push(`@app.cell
 async def _():
     import micropip
 
-    await micropip.install([
-        "aiobotocore==3.8.0",
-        "earthaccess==0.18.0",
-        "harmony-py==1.6.0",
-    ])
+    await micropip.install(${JSON.stringify(micropipDeps, null, 8)})
 
     return (micropip,)`);
   }
 
   // Setup cell 2: Imports
+  const importsList = ["marimo as mo"];
+  if (needsEarthaccess) {
+    importsList.push("earthaccess");
+  }
+  if (needsXarrayPlot) {
+    importsList.push("xarray as xr", "matplotlib.pyplot as plt");
+  }
+
+  const importReturns = ["mo"];
+  if (needsEarthaccess) importReturns.push("earthaccess");
+  if (needsXarrayPlot) importReturns.push("plt", "xr");
+
   cells.push(`@app.cell
 def _():
-    import marimo as mo
-    import earthaccess
-    import xarray as xr
-    import matplotlib.pyplot as plt
-    return earthaccess, mo, plt, xr`);
+    ${importsList.map((i) => `import ${i}`).join("\n    ")}
+    return ${importReturns.join(", ")}`);
 
-  // Setup cell 3: Auth
-  cells.push(`@app.cell
+  // Setup cell 3: Auth (Only if earthaccess is required)
+  if (needsEarthaccess) {
+    cells.push(`@app.cell
 def _(earthaccess):
     # Authenticate with NASA Earthdata
     auth = earthaccess.login()
     return (auth,)`);
+  }
 
   // Build markdown header & body cells based on session steps or explicit params
   let mdIntro =
@@ -197,9 +243,7 @@ def _(mo):
 def _(earthaccess, mo, plt, xr):
     mo.md(
         "## ${
-          isMap
-            ? "Time-Averaged Spatial Map"
-            : "Area-Averaged Time Series Plot"
+          isMap ? "Time-Averaged Spatial Map" : "Area-Averaged Time Series Plot"
         }"
     )
 
@@ -287,14 +331,205 @@ def _(earthaccess, mo, plt, xr):
         search_res,
     )`);
     }
+
+    if (step.toolName === "get-active-fire-detections") {
+      hasPlot = true;
+      const source = (step.params.source as string) || "VIIRS_SNPP_NRT";
+      const days = (step.params.days as number) || 2;
+      const bbox = (step.params.bbox as number[]) || [-83, 34, -81, 36];
+      const date = (step.params.date as string) || "";
+
+      // Interactive API key input prompt cell
+      cells.push(`@app.cell
+def _(mo):
+    import os
+
+    firms_env_key = os.getenv("FIRMS_MAP_KEY", "").strip()
+
+    mo.md(
+        """
+        ## NASA FIRMS API Access Setup
+        To query active fire detection point markers from NASA FIRMS, a free **MAP_KEY** is required.
+        * Sign up for your free key at: [https://firms.modaps.eosdis.nasa.gov/api/map_key/](https://firms.modaps.eosdis.nasa.gov/api/map_key/)
+        * Set it as an environment variable \`export FIRMS_MAP_KEY="your_key"\` or enter it below:
+        """
+    )
+
+    firms_key_input = mo.ui.text(
+        label="FIRMS MAP_KEY",
+        value=firms_env_key,
+        placeholder="Paste your FIRMS MAP_KEY here...",
+    )
+    firms_key_input
+    return (firms_key_input,)`);
+
+      // Data fetch & interactive map display cell
+      cells.push(`@app.cell
+def _(firms_key_input, mo):
+    import os
+    import pandas as pd
+    import requests
+    import folium
+    from folium.plugins import MarkerCluster
+
+    mo.md("## NASA FIRMS Active Fire Detections Analysis")
+
+    MAP_KEY = (firms_key_input.value or os.getenv("FIRMS_MAP_KEY", "")).strip()
+    source = "${source}"
+    days = ${days}
+    bbox = [${bbox[0]}, ${bbox[1]}, ${bbox[2]}, ${bbox[3]}]
+    bbox_str = f"{bbox[0]},{bbox[1]},{bbox[2]},{bbox[3]}"
+    date_param = "${date}"
+
+    has_valid_key = bool(MAP_KEY and MAP_KEY != "YOUR_FIRMS_MAP_KEY")
+    df_fires = pd.DataFrame()
+
+    if has_valid_key:
+        status_url = f"https://firms.modaps.eosdis.nasa.gov/mapserver/mapkey_status/?MAP_KEY={MAP_KEY}"
+        try:
+            status_res = requests.get(status_url)
+            if status_res.status_code == 200:
+                print("FIRMS MAP_KEY Status:", status_res.json())
+        except Exception as e:
+            print("Could not query key status:", e)
+
+        url = f"https://firms.modaps.eosdis.nasa.gov/api/area/csv/{MAP_KEY}/{source}/{bbox_str}/{days}"
+        if date_param:
+            url += f"/{date_param}"
+
+        print(f"FIRMS Query URL: {url}")
+        try:
+            df_fires = pd.read_csv(url)
+            print(f"Retrieved {len(df_fires)} fire detection record(s)")
+        except Exception as err:
+            print(f"Error fetching FIRMS CSV data: {err}")
+    else:
+        print("⚠️ No FIRMS MAP_KEY provided. Enter your key in the input box above or set FIRMS_MAP_KEY.")
+        print("Displaying NASA GIBS satellite thermal anomaly WMS layer below.")
+
+    center_lat = (bbox[1] + bbox[3]) / 2.0
+    center_lon = (bbox[0] + bbox[2]) / 2.0
+
+    m = folium.Map(location=[center_lat, center_lon], zoom_start=9, tiles="cartodbpositron")
+
+    wms_layer = "MODIS_Thermal_Anomalies_Day" if source.startswith("MODIS") else "VIIRS_SNPP_Thermal_Anomalies_375m_Day"
+    folium.WmsTileLayer(
+        url="https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi",
+        layers=wms_layer,
+        name="NASA GIBS Thermal Anomalies Overlay",
+        fmt="image/png",
+        transparent=True,
+        overlay=True,
+    ).add_to(m)
+
+    if not df_fires.empty and "latitude" in df_fires.columns and "longitude" in df_fires.columns:
+        cluster = MarkerCluster(name="Active Fire Points").add_to(m)
+        for _, row in df_fires.iterrows():
+            lat, lon = row["latitude"], row["longitude"]
+            frp = row.get("frp", 0)
+            conf = row.get("confidence", "nominal")
+            sat = row.get("satellite", "Unknown")
+            acq_d = row.get("acq_date", "")
+            acq_t = row.get("acq_time", "")
+
+            popup_html = f"<b>FRP:</b> {frp} MW<br><b>Confidence:</b> {conf}<br><b>Satellite:</b> {sat}<br><b>Date:</b> {acq_d} {acq_t}"
+            folium.CircleMarker(
+                location=[lat, lon],
+                radius=min(max(4 + (frp ** 0.5), 4), 16),
+                color="#ef4444" if str(conf).lower() in ["h", "high"] else "#f97316",
+                fill=True,
+                fill_opacity=0.85,
+                popup=popup_html,
+            ).add_to(cluster)
+
+    folium.LayerControl().add_to(m)
+    mo.Html(m._repr_html_())
+    return (df_fires, m)`);
+    }
+
+    if (step.toolName === "show-wms-map") {
+      hasPlot = true;
+      const wmsUrl =
+        (step.params.wmsUrl as string) ||
+        "https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi";
+      const layers =
+        (step.params.layers as string) ||
+        "MODIS_Terra_CorrectedReflectance_TrueColor";
+      const title = (step.params.title as string) || "WMS Map Layer";
+      const bbox = (step.params.bbox as number[]) || [-180, -90, 180, 90];
+      const time = (step.params.time as string) || "";
+
+      cells.push(`@app.cell
+def _(mo):
+    import folium
+
+    mo.md("## OGC WMS Map Layer Visualization")
+
+    wms_url = "${wmsUrl}".replace("/wms/epsg4326/", "/wms/epsg3857/")
+    bbox = [${bbox[0]}, ${bbox[1]}, ${bbox[2]}, ${bbox[3]}]
+    center_lat = (bbox[1] + bbox[3]) / 2.0
+    center_lon = (bbox[0] + bbox[2]) / 2.0
+
+    m = folium.Map(location=[center_lat, center_lon], zoom_start=5)
+
+    wms_params = {
+        "LAYERS": "${layers}",
+        "TRANSPARENT": "TRUE",
+        "FORMAT": "image/png",
+    }
+    ${time ? `wms_params["TIME"] = "${time}"` : ""}
+
+    folium.WmsTileLayer(
+        url=wms_url,
+        layers="${layers}",
+        name="${title}",
+        fmt="image/png",
+        transparent=True,
+        overlay=True,
+    ).add_to(m)
+
+    folium.LayerControl().add_to(m)
+    mo.Html(m._repr_html_())
+    return (m,)`);
+    }
+
+    if (step.toolName === "show-geotiff-map") {
+      hasPlot = true;
+      const geotiffUrl = (step.params.url as string) || "";
+      const title = (step.params.title as string) || "GeoTIFF Raster Layer";
+
+      cells.push(`@app.cell
+def _(mo):
+    import rioxarray as rxr
+    import matplotlib.pyplot as plt
+
+    mo.md("## Cloud-Optimized GeoTIFF (COG) Raster Analysis")
+
+    url = "${geotiffUrl}"
+    print(f"Opening GeoTIFF from: {url}")
+
+    rds = rxr.open_rasterio(url)
+    print("Dataset Dimensions:", rds.dims)
+    print("CRS:", rds.rio.crs)
+    print("Bounds:", rds.rio.bounds())
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    if len(rds.shape) == 3 and rds.shape[0] >= 3:
+        rds.isel(band=[0, 1, 2]).plot.imshow(ax=ax)
+    else:
+        rds.sel(band=1).plot(ax=ax, cmap="terrain")
+
+    ax.set_title("${title}", fontweight="bold")
+    plt.tight_layout()
+
+    return (ax, fig, rds)`);
+    }
   }
 
   // Default cell if no specific steps occurred
   if (!hasSearch && !hasSubset && !hasPlot) {
     const coll =
-      explicitParams?.collection ||
-      explicitParams?.shortName ||
-      "GPM_3IMERGDF";
+      explicitParams?.collection || explicitParams?.shortName || "GPM_3IMERGDF";
 
     cells.push(`@app.cell
 def _(earthaccess, mo, plt, xr):
@@ -318,14 +553,23 @@ def _(earthaccess, mo, plt, xr):
     return ds, files, results`);
   }
 
+  const scriptDeps = ["pandas", "requests", "folium", "rioxarray"];
+  if (needsEarthaccess) {
+    scriptDeps.unshift(
+      "earthaccess==0.18.0",
+      "aiobotocore==3.8.0",
+      "harmony-py==1.6.0",
+      "xarray",
+      "matplotlib",
+    );
+  }
+
+  const formattedDeps = scriptDeps.map((d) => `#     "${d}",`).join("\n");
+
   return `# /// script
 # requires-python = ">=3.12"
 # dependencies = [
-#     "earthaccess==0.18.0",
-#     "aiobotocore==3.8.0",
-#     "harmony-py==1.6.0",
-#     "xarray",
-#     "matplotlib",
+${formattedDeps}
 # ]
 # ///
 

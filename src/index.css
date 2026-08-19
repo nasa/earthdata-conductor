@@ -1,2 +1,17 @@
-@import "tailwindcss";
+@import "ol/ol.css";
 @import "@nasa-terra/components/dist/themes/horizon.css";
+@import "tailwindcss";
+
+/* Ensure OpenLayers map container and viewport fill parent completely */
+.ol-viewport,
+.ol-viewport canvas {
+  width: 100% !important;
+  height: 100% !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+}
+
+.ol-touch .ol-control button {
+  font-size: 1.25em;
+}

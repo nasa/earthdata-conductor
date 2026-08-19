@@ -23,9 +23,7 @@ describe("Marimo Notebook Generator & LZString Compressor", () => {
     const code = "import marimo";
     const url = getMarimoUrl(code, true);
 
-    expect(url).toContain(
-      "https://molab.marimo.io/new/wasm/?edit=true#code/",
-    );
+    expect(url).toContain("https://molab.marimo.io/new/wasm/?edit=true#code/");
   });
 
   it("should omit micropip installs by default", () => {
@@ -69,9 +67,7 @@ describe("Marimo Notebook Generator & LZString Compressor", () => {
     expect(code).toContain("import earthaccess");
     expect(code).toContain("earthaccess.search_data");
     expect(code).toContain('short_name="precipitation"');
-    expect(code).toContain(
-      'temporal=("2026-01-01", "2026-12-31")',
-    );
+    expect(code).toContain('temporal=("2026-01-01", "2026-12-31")');
     expect(code).toContain("earthaccess.login()");
   });
 
@@ -109,12 +105,8 @@ describe("Marimo Notebook Generator & LZString Compressor", () => {
     expect(code).toContain(
       "from harmony import Client, Collection, Request, BBox, Format",
     );
-    expect(code).toContain(
-      'collection=Collection(id="C1276812863-GES_DISC")',
-    );
-    expect(code).toContain(
-      "spatial=BBox(-122.5, 37.5, -122, 38)",
-    );
+    expect(code).toContain('collection=Collection(id="C1276812863-GES_DISC")');
+    expect(code).toContain("spatial=BBox(-122.5, 37.5, -122, 38)");
     expect(code).toContain('variables=["precipitation"]');
     expect(code).toContain('format=Format("application/netcdf")');
     expect(code).toContain("client.submit(request)");
@@ -139,7 +131,7 @@ describe("Marimo Notebook Generator & LZString Compressor", () => {
     expect(code).toContain(
       'earthaccess.search_data(\n        short_name="GPM_3IMERGHH_07"',
     );
-    expect(code).toContain('var_key = (');
+    expect(code).toContain("var_key = (");
     expect(code).toContain('"precipitation"');
     expect(code).toContain("ts = da.mean(");
     expect(code).toContain("ts.plot(");
@@ -188,15 +180,82 @@ describe("Marimo Notebook Generator & LZString Compressor", () => {
       endDate: "2026-01-31",
     });
 
-    expect(code).toContain(
-      "### Active Collection: **MERRA2_TEST**",
-    );
-    expect(code).toContain(
-      "- Spatial Area: -80,30,-70,40",
-    );
-    expect(code).toContain(
-      "- Time Range: 2026-01-01 to 2026-01-31",
-    );
+    expect(code).toContain("### Active Collection: **MERRA2_TEST**");
+    expect(code).toContain("- Spatial Area: -80,30,-70,40");
+    expect(code).toContain("- Time Range: 2026-01-01 to 2026-01-31");
     expect(code).toContain('short_name="MERRA2_TEST"');
+  });
+
+  it("should generate FIRMS active fire detection notebook step with pandas & folium", () => {
+    const code = generateMultiStepNotebook([
+      {
+        toolName: "get-active-fire-detections",
+        timestamp: Date.now(),
+        params: {
+          source: "VIIRS_SNPP_NRT",
+          bbox: [-83, 34, -81, 36],
+          days: 2,
+        },
+      },
+    ]);
+
+    expect(code).toContain("NASA FIRMS Active Fire Detections Analysis");
+    expect(code).toContain("https://firms.modaps.eosdis.nasa.gov/api/map_key/");
+    expect(code).toContain("firms_key_input = mo.ui.text(");
+    expect(code).toContain(
+      "https://firms.modaps.eosdis.nasa.gov/api/area/csv/",
+    );
+    expect(code).toContain("folium.WmsTileLayer(");
+    expect(code).toContain("MarkerCluster(");
+  });
+
+  it("should generate WMS map visualization notebook step with folium", () => {
+    const code = generateMultiStepNotebook([
+      {
+        toolName: "show-wms-map",
+        timestamp: Date.now(),
+        params: {
+          wmsUrl: "https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi",
+          layers: "MODIS_Terra_CorrectedReflectance_TrueColor",
+          title: "NASA True Color",
+        },
+      },
+    ]);
+
+    expect(code).toContain("OGC WMS Map Layer Visualization");
+    expect(code).toContain("folium.WmsTileLayer(");
+    expect(code).toContain("MODIS_Terra_CorrectedReflectance_TrueColor");
+  });
+
+  it("should generate GeoTIFF raster notebook step with rioxarray", () => {
+    const code = generateMultiStepNotebook([
+      {
+        toolName: "show-geotiff-map",
+        timestamp: Date.now(),
+        params: {
+          url: "https://sentinel-cogs.s3.us-west-2.amazonaws.com/test.tif",
+          title: "Sentinel COG",
+        },
+      },
+    ]);
+
+    expect(code).toContain("Cloud-Optimized GeoTIFF (COG) Raster Analysis");
+    expect(code).toContain("rxr.open_rasterio(url)");
+    expect(code).toContain("Sentinel COG");
+  });
+
+  it("should omit earthaccess import and login when only FIRMS or map tools are used", () => {
+    const code = generateMultiStepNotebook([
+      {
+        toolName: "get-active-fire-detections",
+        timestamp: Date.now(),
+        params: { spatialArea: "Asheville, NC" },
+      },
+    ]);
+
+    expect(code).not.toContain("import earthaccess");
+    expect(code).not.toContain("earthaccess.login()");
+    expect(code).toContain('source.startswith("MODIS")');
+    expect(code).not.toContain("startsWith");
   });
 });
