@@ -313,7 +313,7 @@ export default function SearchCollections() {
           <div className="grid grid-cols-1 md:grid-cols-5 min-h-[450px]">
             {/* Left side: Scrollable list of collections (cards) */}
             <div className="md:col-span-2 border-r border-zinc-200 dark:border-zinc-800 max-h-[550px] overflow-y-auto p-4 space-y-3 bg-zinc-50/50 dark:bg-zinc-950/50">
-              <div className="text-[11px] font-semibold tracking-wider text-zinc-400 dark:text-zinc-500 uppercase px-1 mb-2">
+              <div className="text-[11px] font-semibold tracking-wider text-zinc-500 dark:text-zinc-400 uppercase px-1 mb-2">
                 Search Results ({collections.length})
               </div>
               {collections.map((c) => {
@@ -344,7 +344,7 @@ export default function SearchCollections() {
                           )}
                         </div>
                         {c.version && (
-                          <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono">
+                          <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono">
                             v{c.version}
                           </span>
                         )}
@@ -358,7 +358,7 @@ export default function SearchCollections() {
                       >
                         {c.entry_title}
                       </h4>
-                      <p className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-1 line-clamp-2 leading-relaxed">
+                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1 line-clamp-2 leading-relaxed">
                         {c.summary || c.description || "No summary available."}
                       </p>
                     </TerraCard>
@@ -405,7 +405,7 @@ export default function SearchCollections() {
 
                     {/* Scrollable Summary */}
                     <div className="space-y-1">
-                      <span className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
+                      <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                         Description
                       </span>
                       <div className="text-xs text-zinc-600 dark:text-zinc-300 max-h-[160px] overflow-y-auto leading-relaxed border border-zinc-100 dark:border-zinc-800 rounded-lg p-3 bg-zinc-50/30 dark:bg-zinc-900/30">
@@ -419,7 +419,7 @@ export default function SearchCollections() {
                     <div className="grid grid-cols-2 gap-4 text-xs">
                       {/* Temporal Range */}
                       <div className="space-y-1">
-                        <span className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
+                        <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                           Temporal Coverage
                         </span>
                         <div className="font-medium text-zinc-700 dark:text-zinc-300 flex flex-col gap-0.5">
@@ -434,7 +434,7 @@ export default function SearchCollections() {
 
                       {/* Platforms & Instruments */}
                       <div className="space-y-1">
-                        <span className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
+                        <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                           Sensor & Platform
                         </span>
                         <div className="text-zinc-700 dark:text-zinc-300">
@@ -470,7 +470,7 @@ export default function SearchCollections() {
                   {/* Action Tabs & Subsetting / Plotting Panel */}
                   {selectedCollection && (
                     <div className="border-t border-zinc-100 dark:border-zinc-800 pt-4 mt-4">
-                      <span className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block mb-2">
+                      <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider block mb-2">
                         Access Actions
                       </span>
 
@@ -546,7 +546,7 @@ export default function SearchCollections() {
                               active={activeTab === "original"}
                             >
                               <div className="space-y-4 pt-4">
-                                <p className="text-xs text-zinc-500 leading-relaxed">
+                                <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
                                   Access the original dataset files directly
                                   from the archive. You will be able to select
                                   and download raw granules.
@@ -577,7 +577,7 @@ export default function SearchCollections() {
                               >
                                 <div className="space-y-4 pt-4">
                                   <div className="space-y-1.5">
-                                    <span className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block">
+                                    <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider block">
                                       Select Variable of Interest
                                     </span>
                                     <div className="max-h-[140px] overflow-y-auto border border-zinc-200 dark:border-zinc-800 rounded-lg p-2 bg-zinc-50/50 dark:bg-zinc-900/50 space-y-1">
@@ -632,7 +632,7 @@ export default function SearchCollections() {
                                   <div className="space-y-1.5">
                                     <label
                                       htmlFor="format-select"
-                                      className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block"
+                                      className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider block"
                                     >
                                       Output Format
                                     </label>
@@ -772,7 +772,7 @@ export default function SearchCollections() {
                               >
                                 <div className="space-y-4 pt-4">
                                   <div className="space-y-1.5">
-                                    <span className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block">
+                                    <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider block">
                                       Select Variable to Plot
                                     </span>
                                     <div className="max-h-[140px] overflow-y-auto border border-zinc-200 dark:border-zinc-800 rounded-lg p-2 bg-zinc-50/50 dark:bg-zinc-900/50 space-y-1">
@@ -1079,7 +1079,7 @@ export default function SearchCollections() {
                   )}
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center h-full text-center text-zinc-400 dark:text-zinc-500">
+                <div className="flex flex-col items-center justify-center h-full text-center text-zinc-500 dark:text-zinc-400">
                   <Compass className="h-10 w-10 mb-2 stroke-[1.5]" />
                   <p className="text-xs">
                     Select a dataset from the list to view its details and
