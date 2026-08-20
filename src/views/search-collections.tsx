@@ -238,7 +238,7 @@ export default function SearchCollections() {
                   Dataset Search Results
                 </h2>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                  Select from matching NASA Earth science collections below.
+                  Click on the matching NASA Earth science collections below.
                 </p>
               </div>
             </div>
@@ -312,7 +312,7 @@ export default function SearchCollections() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-5 min-h-[450px]">
             {/* Left side: Scrollable list of collections (cards) */}
-            <div className="md:col-span-2 border-r border-zinc-200 dark:border-zinc-800 max-h-[550px] overflow-y-auto p-4 space-y-3 bg-zinc-50/50 dark:bg-zinc-950/50">
+            <div className="md:col-span-2 border-r border-zinc-200 dark:border-zinc-800 max-h-[650px] overflow-y-auto p-4 space-y-3 bg-zinc-50/50 dark:bg-zinc-950/50">
               <div className="text-[11px] font-semibold tracking-wider text-zinc-500 dark:text-zinc-400 uppercase px-1 mb-2">
                 Search Results ({collections.length})
               </div>
@@ -330,7 +330,7 @@ export default function SearchCollections() {
                         isSelected
                           ? "[--border-color:var(--color-blue-600)] bg-blue-50/10 dark:bg-blue-950/5 shadow-xs"
                           : "hover:[--border-color:var(--color-blue-300)] hover:shadow-xs"
-                      }`}
+                      }`} style={{overflow: 'hidden'}}
                     >
                       <div className="flex justify-between items-start gap-2">
                         <div className="flex flex-wrap gap-1.5 items-center">
@@ -469,7 +469,7 @@ export default function SearchCollections() {
 
                   {/* Action Tabs & Subsetting / Plotting Panel */}
                   {selectedCollection && (
-                    <div className="border-t border-zinc-100 dark:border-zinc-800 pt-4 mt-4">
+                    <div className="border-t border-zinc-300 dark:border-zinc-600 pt-4 mt-4">
                       <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider block mb-2">
                         Access Actions
                       </span>
