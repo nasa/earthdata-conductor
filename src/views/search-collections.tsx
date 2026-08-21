@@ -532,7 +532,7 @@ export default function SearchCollections() {
                               <span className="flex flex-wrap gap-2 items-center">
                                 Browse Files 
                                 <TerraBadge variant="primary" pill>
-                                {selectedCollection?.granule_count ! == undefined
+                                {selectedCollection?.granule_count !== undefined
                                   ? `${selectedCollection.granule_count} granules`
                                   : 'Browse'}
                                 </TerraBadge>
