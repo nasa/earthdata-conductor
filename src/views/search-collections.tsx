@@ -15,6 +15,7 @@ import {
   Info,
   MapPin,
   Search,
+  SquareArrowOutUpRight
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSendFollowUpMessage } from "skybridge/web";
@@ -248,7 +249,7 @@ export default function SearchCollections() {
           <div className="mt-4 flex flex-wrap gap-2">
             <TerraTag variant="content" size="small">
               <span className="flex items-center gap-1">
-                <Search className="h-3.5 w-3.5 text-blue-600" />
+                <Search className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
                 Keyword: <strong>{query.keyword || "N/A"}</strong>
               </span>
             </TerraTag>
@@ -405,10 +406,10 @@ export default function SearchCollections() {
 
                     {/* Scrollable Summary */}
                     <div className="space-y-1">
-                      <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                      <span className="text-[12px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                         Description
                       </span>
-                      <div className="text-xs text-zinc-600 dark:text-zinc-300 max-h-[160px] overflow-y-auto leading-relaxed border border-zinc-100 dark:border-zinc-800 rounded-lg p-3 bg-zinc-50/30 dark:bg-zinc-900/30">
+                      <div className="text-[12px] text-zinc-600 dark:text-zinc-300 max-h-[160px] overflow-y-auto leading-relaxed border border-zinc-100 dark:border-zinc-800 rounded-lg p-3 bg-zinc-50/30 dark:bg-zinc-900/30">
                         {selectedCollection.summary ||
                           selectedCollection.description ||
                           "No detailed description available."}
@@ -419,7 +420,7 @@ export default function SearchCollections() {
                     <div className="grid grid-cols-2 gap-4 text-xs">
                       {/* Temporal Range */}
                       <div className="space-y-1">
-                        <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                        <span className="text-[12px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                           Temporal Coverage
                         </span>
                         <div className="font-medium text-zinc-700 dark:text-zinc-300 flex flex-col gap-0.5">
@@ -434,7 +435,7 @@ export default function SearchCollections() {
 
                       {/* Platforms & Instruments */}
                       <div className="space-y-1">
-                        <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                        <span className="text-[12px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                           Sensor & Platform
                         </span>
                         <div className="text-zinc-700 dark:text-zinc-300">
@@ -465,12 +466,20 @@ export default function SearchCollections() {
                         </div>
                       </div>
                     </div>
+
+                    {/* Related Collections */}
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <span className="text-sm flex items-center gap-1 text-blue-600 dark:text-blue-400 underline">
+                        See Related Collections
+                        <SquareArrowOutUpRight className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                      </span>
+                    </div>
                   </div>
 
                   {/* Action Tabs & Subsetting / Plotting Panel */}
                   {selectedCollection && (
-                    <div className="border-t border-zinc-300 dark:border-zinc-600 pt-4 mt-4">
-                      <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider block mb-2">
+                    <div className="border-t border-zinc-300 dark:border-zinc-600 pt-4 mt-2">
+                      <span className="text-[12px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider block mb-2">
                         Access Actions
                       </span>
 
@@ -520,7 +529,14 @@ export default function SearchCollections() {
                               panel="original"
                               active={activeTab === "original"}
                             >
-                              Browse Files
+                              <span className="flex flex-wrap gap-2 items-center">
+                                Browse Files 
+                                <TerraBadge variant="primary" pill>
+                                {selectedCollection?.granule_count ! == undefined
+                                  ? `${selectedCollection.granule_count} granules`
+                                  : 'Browse'}
+                                </TerraBadge>
+                              </span>
                             </TerraTab>
                             {hasSubsetting && (
                               <TerraTab
@@ -546,7 +562,7 @@ export default function SearchCollections() {
                               active={activeTab === "original"}
                             >
                               <div className="space-y-4 pt-4">
-                                <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                                <p className="text-[12px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
                                   Access the original dataset files directly
                                   from the archive. You will be able to select
                                   and download raw granules.
