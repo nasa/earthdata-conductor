@@ -15,7 +15,7 @@ import {
   Info,
   MapPin,
   Search,
-  SquareArrowOutUpRight
+  SquareArrowOutUpRight,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSendFollowUpMessage } from "skybridge/web";
@@ -327,10 +327,12 @@ export default function SearchCollections() {
                     className="w-full text-left focus:outline-hidden transition-all"
                   >
                     <TerraCard
-                      className={`block w-full transition-all duration-200 ${isSelected
+                      className={`block w-full transition-all duration-200 ${
+                        isSelected
                           ? "[--border-color:var(--color-blue-600)] bg-blue-50/10 dark:bg-blue-950/5 shadow-xs"
                           : "hover:[--border-color:var(--color-blue-300)] hover:shadow-xs"
-                        }`} style={{ overflow: 'hidden' }}
+                      }`}
+                      style={{ overflow: "hidden" }}
                     >
                       <div className="flex justify-between items-start gap-2">
                         <div className="flex flex-wrap gap-1.5 items-center">
@@ -350,10 +352,11 @@ export default function SearchCollections() {
                         )}
                       </div>
                       <h4
-                        className={`text-xs font-semibold mt-2 line-clamp-2 transition-colors ${isSelected
+                        className={`text-xs font-semibold mt-2 line-clamp-2 transition-colors ${
+                          isSelected
                             ? "text-blue-600 dark:text-blue-400 font-bold"
                             : "text-zinc-800 dark:text-zinc-200"
-                          }`}
+                        }`}
                       >
                         {c.entry_title}
                       </h4>
@@ -443,12 +446,12 @@ export default function SearchCollections() {
                               {selectedCollection.platforms
                                 ? Array.isArray(selectedCollection.platforms)
                                   ? selectedCollection.platforms
-                                    .map((p) =>
-                                      typeof p === "object"
-                                        ? p.short_name || p.ShortName
-                                        : p,
-                                    )
-                                    .join(", ")
+                                      .map((p) =>
+                                        typeof p === "object"
+                                          ? p.short_name || p.ShortName
+                                          : p,
+                                      )
+                                      .join(", ")
                                   : String(selectedCollection.platforms)
                                 : "N/A"}
                             </strong>
@@ -530,9 +533,10 @@ export default function SearchCollections() {
                               <span className="flex flex-wrap gap-2 items-center">
                                 Browse Files
                                 <TerraBadge variant="primary" pill>
-                                  {selectedCollection?.granule_count !== undefined
+                                  {selectedCollection?.granule_count !==
+                                  undefined
                                     ? `${selectedCollection.granule_count} granules`
-                                    : 'Browse'}
+                                    : "Browse"}
                                 </TerraBadge>
                               </span>
                             </TerraTab>
@@ -608,10 +612,11 @@ export default function SearchCollections() {
                                             onClick={() =>
                                               setSelectedVariableId(varId)
                                             }
-                                            className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs transition-colors border ${isSelected
+                                            className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs transition-colors border ${
+                                              isSelected
                                                 ? "bg-blue-500/10 border-blue-500/30 text-blue-600 dark:text-blue-400 font-semibold"
                                                 : "hover:bg-zinc-100 dark:hover:bg-zinc-800 border-transparent text-zinc-700 dark:text-zinc-300"
-                                              }`}
+                                            }`}
                                           >
                                             <div className="flex flex-col w-full">
                                               <div className="flex items-center justify-between gap-2">
@@ -802,10 +807,11 @@ export default function SearchCollections() {
                                             onClick={() =>
                                               setSelectedVariableId(varId)
                                             }
-                                            className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs transition-colors border ${isSelected
+                                            className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs transition-colors border ${
+                                              isSelected
                                                 ? "bg-blue-500/10 border-blue-500/30 text-blue-600 dark:text-blue-400 font-semibold"
                                                 : "hover:bg-zinc-100 dark:hover:bg-zinc-800 border-transparent text-zinc-700 dark:text-zinc-300"
-                                              }`}
+                                            }`}
                                           >
                                             <div className="flex flex-col w-full">
                                               <div className="flex items-center justify-between gap-2">

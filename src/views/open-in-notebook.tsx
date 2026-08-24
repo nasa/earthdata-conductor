@@ -11,8 +11,8 @@ export default function OpenInNotebook() {
   const toolInfo = useToolInfo<"open-in-notebook">();
   const output = toolInfo.output as
     | {
-      marimoUrl?: string;
-    }
+        marimoUrl?: string;
+      }
     | undefined;
 
   const marimoUrl = output?.marimoUrl || "#";

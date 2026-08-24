@@ -1,97 +1,93 @@
-# Skybridge Template
+# Earthdata Conductor
 
-A starter TypeScript template for building MCP and ChatGPT Apps with the [Skybridge](https://docs.skybridge.tech) framework.
+**Earthdata Conductor** (`earthdata-conductor`) is a Model Context Protocol (MCP) server powered by [Skybridge](https://docs.skybridge.tech). It integrates NASA Earthdata dataset discovery, spatial/temporal search, file browsing, Harmony subsetting, interactive maps, time-series plotting, and WASM Python notebook generation directly into AI host interfaces like ChatGPT and Claude.
 
-## Getting Started
+---
 
-### Prerequisites
+## Features & MCP Tools
 
-- Node.js 24+
+| Tool | UI View / Description |
+| :--- | :--- |
+| **`search-collections`** | Search NASA Earth science datasets by text, spatial bounds, and date ranges. Features variable-first recommendations. |
+| **`browse-data`** | Interactive file browser for collection granules using `@nasa-terra/components`. |
+| **`create-harmony-job`** | Submit spatial/temporal variable subsetting jobs via NASA Harmony OGC Coverages API. |
+| **`get-harmony-capabilities`** | Query collection subsetting capabilities (variables, formats, reprojection support). |
+| **`show-time-series-plot`** | Inline area-averaged time series charts powered by `<terra-time-series>`. |
+| **`show-time-averaged-map`** | Spatial map visualizations powered by `<terra-time-average-map>`. |
+| **`get-active-fire-detections`** | Real-time NASA FIRMS thermal anomaly mapping (MODIS / VIIRS). |
+| **`show-wms-map`** / **`show-geotiff-map`** | Interactive OpenLayers GIS maps rendering WMS tiles and GeoTIFF rasters. |
+| **`open-in-notebook`** | Stitches conversation session history into a runnable WASM Python notebook (`earthaccess`, `harmony-py`, `xarray`). |
 
-### Local Development
+---
 
-#### 1. Install
+## Quickstart
 
+### 1. Prerequisites
+- **Node.js**: `v24.14.1` or higher
+
+### 2. Setup
 ```bash
-cp .env.example .env # copy environment config over and fill out the AUTH_TOKEN with an Earthdata Login token
-
+cp .env.example .env
 npm install
-# or
-pnpm install
-# or
-bun install
-# or
-deno install
-# or
-yarn install
 ```
 
-#### 2. Start your local server
+Configure optional environment variables in `.env`:
+* `AUTH_TOKEN`: Static Bearer token override for local development authentication bypass.
+* `FIRMS_MAP_KEY`: NASA FIRMS MAP_KEY for thermal anomaly fire detection API queries.
 
-Run the development server from the root directory:
-
+### 3. Development
+Start the dev server and Skybridge DevTools UI at `http://localhost:3000`:
 ```bash
 npm run dev
-# or
-pnpm dev
-# or
-bun dev
-# or
-deno task dev
-# or
-yarn dev
 ```
 
-This command starts:
-- Your MCP server at `http://localhost:3000/mcp`.
-- Skybridge DevTools UI at `http://localhost:3000`.
+To test with web clients (e.g. ChatGPT, Claude) via an HTTPS tunnel:
+```bash
+npm run dev:tunnel
+```
 
-#### 3. Project structure
+---
+
+## Scripts
+
+* `npm run dev` – Launch local dev server & Skybridge DevTools
+* `npm run dev:tunnel` – Launch dev server with public HTTPS tunnel
+* `npm run test` – Run Vitest unit & component test suite
+* `npm run lint` – Check formatting and static analysis with Biome
+* `npm run lint:fix` – Automatically fix linting and formatting issues
+* `npm run build` – Build production assets with Skybridge
+* `npm run start` – Run built production server
+* `npm run deploy` – Deploy to Alpic cloud
+
+---
+
+## Architecture Overview
 
 ```
 ├── src/
-│   ├── server.ts         # Server entry point
-│   ├── views/            # React components (one per view)
-│   ├── components/       # Shared UI components
-│   ├── helpers.ts        # Shared utilities
-│   └── index.css         # Global styles
-├── vite.config.ts
-├── alpic.json            # Deployment config
+│   ├── server.ts         # MCP Server entry point & tool registration
+│   ├── csp.ts            # Content Security Policy configuration
+│   ├── views/            # React components for Skybridge views
+│   ├── schemas/          # Zod tool input & output schemas
+│   ├── utils/            # Harmony, session history, FIRMS, & geocoding helpers
+│   └── index.css         # Global styles & OpenLayers CSS
+├── vite.config.ts        # Vite configuration
+├── SPEC.md               # Technical specification & decision log
+├── alpic.json            # Deployment configuration
 └── package.json
 ```
 
-### Create your first view
+---
 
-#### 1. Add a new view
+## Authentication
 
-- Register a tool in `src/server.ts` with a unique name (e.g., `my-view`) using [`registerTool`](https://docs.skybridge.tech/api-reference/register-tool) and a `view` config.
-- Create a matching React component at `src/views/my-view.tsx`. **The file name must match the view name exactly**.
+Earthdata Conductor supports **NASA Earthdata Login (URS)** OAuth 2.0 authentication for production tool execution. For local testing, setting `AUTH_TOKEN` in `.env` bypasses OAuth verification and executes tool requests with the static Bearer token.
 
-#### 2. Edit views with Hot Module Replacement (HMR)
-
-Edit and save components in `src/views/` — changes will appear instantly inside your App.
-
-#### 3. Edit server code
-
-Modify files in `src/` and refresh the tool list with your MCP Client to see the changes.
-
-### Testing your App
-
-You can test your app locally by using our DevTools UI on `http://localhost:3000` while running the `dev` command.
-
-To connect your app with web clients like ChatGPT or Claude, expose your server on the internet by adding the `--tunnel` flag.
-By enabling the tunnel, you'll also be able to access a playground to chat with your app and a real LLM. Learn more by reading the [test guide](https://docs.skybridge.tech/quickstart/test-your-app).
-
-
-## Deploy to Production
-
-Skybridge is infrastructure vendor agnostic, and your app can be deployed on any cloud platform supporting MCP.
-
-The simplest way to deploy your app is by running the `deploy` command, which will push your MCP server to the [Alpic](https://alpic.ai/) cloud for free.
+---
 
 ## Resources
-- [Skybridge Documentation](https://docs.skybridge.tech/)
-- [Apps SDK Documentation](https://developers.openai.com/apps-sdk)
-- [MCP Apps Documentation](https://github.com/modelcontextprotocol/ext-apps/tree/main)
-- [Model Context Protocol Documentation](https://modelcontextprotocol.io/)
-- [Alpic Documentation](https://docs.alpic.ai/)
+
+- [Skybridge Documentation](https://docs.skybridge.tech)
+- [Model Context Protocol (MCP)](https://modelcontextprotocol.io/)
+- [NASA Earthdata](https://www.earthdata.nasa.gov/)
+- [Alpic Cloud Documentation](https://docs.alpic.ai/)

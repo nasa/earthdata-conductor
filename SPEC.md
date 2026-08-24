@@ -171,11 +171,6 @@ A modern, responsive, and interactive set of web views integrated into the AI as
 * **Decision**: Implemented `findMatchingHarmonyJob` utility (`src/utils/harmony-jobs.ts`) and integrated it into `<TimeSeriesPlotView>` (`time-series-plot.tsx`) and `<TimeAveragedMapView>` (`time-averaged-map.tsx`).
 * **Rationale**: Queries `https://harmony.earthdata.nasa.gov/jobs` on view mount to match target request parameters (`collection`, `variable`, `startDate`, `endDate`, `location`) against recent user jobs. When a match is found, passes `jobId` to `<TerraTimeSeries>` / `<TerraTimeAverageMap>`, bypassing redundant job creation and eliminating ~20-40 second loading wait times.
 
-
-
-
-
-
-
-
-
+### Project Documentation & Concise README Overhaul (August 2026)
+* **Decision**: Overhauled `README.md` to reflect the full production capabilities of Earthdata Conductor (`earthdata-conductor`), replacing the generic starter Skybridge template with a concise, structured reference covering feature tools, quickstart installation, dev scripts, directory architecture, and OAuth authentication.
+* **Rationale**: Provides clear, upfront onboarding for developers and AI hosts without unnecessary verbosity.
