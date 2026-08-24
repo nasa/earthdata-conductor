@@ -15,7 +15,7 @@ import {
   Info,
   MapPin,
   Search,
-  SquareArrowOutUpRight
+  SquareArrowOutUpRight,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSendFollowUpMessage } from "skybridge/web";
@@ -331,7 +331,8 @@ export default function SearchCollections() {
                         isSelected
                           ? "[--border-color:var(--color-blue-600)] bg-blue-50/10 dark:bg-blue-950/5 shadow-xs"
                           : "hover:[--border-color:var(--color-blue-300)] hover:shadow-xs"
-                      }`} style={{overflow: 'hidden'}}
+                      }`}
+                      style={{ overflow: "hidden" }}
                     >
                       <div className="flex justify-between items-start gap-2">
                         <div className="flex flex-wrap gap-1.5 items-center">
@@ -530,11 +531,12 @@ export default function SearchCollections() {
                               active={activeTab === "original"}
                             >
                               <span className="flex flex-wrap gap-2 items-center">
-                                Browse Files 
+                                Browse Files
                                 <TerraBadge variant="primary" pill>
-                                {selectedCollection?.granule_count !== undefined
-                                  ? `${selectedCollection.granule_count} granules`
-                                  : 'Browse'}
+                                  {selectedCollection?.granule_count !==
+                                  undefined
+                                    ? `${selectedCollection.granule_count} granules`
+                                    : "Browse"}
                                 </TerraBadge>
                               </span>
                             </TerraTab>

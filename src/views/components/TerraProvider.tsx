@@ -11,6 +11,6 @@ export default function TerraProvider(props: { children: ReactNode }) {
   useEffect(() => {
     document.documentElement.classList.add("terra-prefers-color-scheme");
   }, []);
-  
+
   return <>{props.children}</>;
 }
