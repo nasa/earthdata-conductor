@@ -93,7 +93,7 @@ export function MapView({
 
   return (
     <TerraProvider>
-      <div className="w-full min-h-[550px] flex flex-col gap-3 p-1">
+      <div className="w-full flex flex-col gap-3 p-1">
         <MapHeader
           title={title}
           sourceBadge={source}
@@ -103,7 +103,7 @@ export function MapView({
         />
 
         {apiKeyMissing && (
-          <div className="px-3.5 py-2.5 bg-amber-50 dark:bg-amber-950/60 border border-amber-200/80 dark:border-amber-800/60 rounded-xl text-xs text-amber-800 dark:text-amber-300 flex items-center justify-between gap-2 shadow-2xs">
+          <div className="px-3.5 py-2.5 bg-amber-50 dark:bg-amber-950/60 border border-amber-200/80 dark:border-amber-800/60 rounded-xl text-xs text-amber-800 dark:text-amber-300 flex items-center justify-between gap-2 shadow-2xs shrink-0">
             <span className="font-medium">
               🔑 <strong>FIRMS API Key Required for Point Markers</strong>: Add{" "}
               <code className="bg-amber-100 dark:bg-amber-900 px-1 py-0.5 rounded text-[11px]">
@@ -123,7 +123,7 @@ export function MapView({
           <DetectionStats detections={detections} />
         )}
 
-        <div className="relative w-full h-[450px] flex-1">
+        <div className="relative w-full h-[520px] sm:h-[580px]">
           <OpenLayersMapView
             bbox={bbox}
             basemap={basemap}

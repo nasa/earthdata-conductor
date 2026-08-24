@@ -109,22 +109,31 @@ export const OpenLayersMapView: React.FC<OpenLayersMapViewProps> = ({
 
     mapInstanceRef.current = map;
 
-    // ResizeObserver to ensure OpenLayers updates canvas size on container resize
+    const updateMapSize = () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.updateSize();
+      }
+    };
+
+    // ResizeObserver to ensure OpenLayers updates canvas size on container/parent resize
     const resizeObserver = new ResizeObserver(() => {
-      map.updateSize();
+      updateMapSize();
     });
 
     if (mapRef.current) {
       resizeObserver.observe(mapRef.current);
+      if (mapRef.current.parentElement) {
+        resizeObserver.observe(mapRef.current.parentElement);
+      }
     }
 
-    // Force size updates after DOM layout settles
-    requestAnimationFrame(() => {
-      map.updateSize();
-    });
-    const timer = setTimeout(() => {
-      map.updateSize();
-    }, 200);
+    window.addEventListener("resize", updateMapSize);
+
+    // Staggered size updates after DOM layout settles and tiles load
+    requestAnimationFrame(updateMapSize);
+    const timer1 = setTimeout(updateMapSize, 100);
+    const timer2 = setTimeout(updateMapSize, 400);
+    const timer3 = setTimeout(updateMapSize, 1200);
 
     map.on("pointermove", (e) => {
       const hit = map.hasFeatureAtPixel(e.pixel);
@@ -149,7 +158,10 @@ export const OpenLayersMapView: React.FC<OpenLayersMapViewProps> = ({
     });
 
     return () => {
-      clearTimeout(timer);
+      window.removeEventListener("resize", updateMapSize);
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
       resizeObserver.disconnect();
       map.setTarget(undefined);
       mapInstanceRef.current = null;
@@ -315,8 +327,12 @@ export const OpenLayersMapView: React.FC<OpenLayersMapViewProps> = ({
   }, [bbox, detections]);
 
   return (
-    <div className="relative w-full h-full min-h-[420px] rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-inner">
-      <div ref={mapRef} className="w-full h-full min-h-[420px]" />
+    <div className="relative w-full h-full rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-inner">
+      <div
+        ref={mapRef}
+        className="w-full h-full"
+        style={{ width: "100%", height: "100%" }}
+      />
     </div>
   );
 };

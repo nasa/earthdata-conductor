@@ -11,6 +11,7 @@ const csp = {
     "blob:",
   ],
   connectDomains: [
+    "https://cdn.jsdelivr.net",
     "https://harmony.earthdata.nasa.gov",
     "https://harmony.uat.earthdata.nasa.gov",
     "https://cmr.earthdata.nasa.gov",

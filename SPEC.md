@@ -163,6 +163,17 @@ A modern, responsive, and interactive set of web views integrated into the AI as
 * **Decision**: Designed and implemented a unified generic Map React component (`map-view.tsx`) using OpenLayers (`ol`), alongside three new MCP tools: `get-active-fire-detections` (NASA FIRMS thermal anomalies API adapter), `show-wms-map` (WMS tile layers), and `show-geotiff-map` (GeoTIFF/COG rasters).
 * **Rationale**: Decouples map visualization from dataset-specific search formats. Allows real-time event observation (active fires) and general GIS imagery overlay rendering across NASA FIRMS, GIBS, and user-provided WMS/GeoTIFF sources. Integrated OpenLayers layer switching (Street, Satellite, Dark), FRP detection statistics, feature inspection popovers, and interactive notebook generators.
 
+### `@nasa-terra/components` Icon CDN Content Security Policy Update (August 2026)
+* **Decision**: Added `"https://cdn.jsdelivr.net"` to `connectDomains` in `src/csp.ts`.
+* **Rationale**: Resolves browser Content Security Policy (`connect-src`) errors when NASA Terra Web Components fetch SVG icon assets (`outline-globe-alt.svg`, `solid-chevron-down.svg`, `solid-check.svg`) asynchronously from `setBasePath` CDN URLs.
+
+### Recent Harmony Job Reuse Optimization (August 2026)
+* **Decision**: Implemented `findMatchingHarmonyJob` utility (`src/utils/harmony-jobs.ts`) and integrated it into `<TimeSeriesPlotView>` (`time-series-plot.tsx`) and `<TimeAveragedMapView>` (`time-averaged-map.tsx`).
+* **Rationale**: Queries `https://harmony.earthdata.nasa.gov/jobs` on view mount to match target request parameters (`collection`, `variable`, `startDate`, `endDate`, `location`) against recent user jobs. When a match is found, passes `jobId` to `<TerraTimeSeries>` / `<TerraTimeAverageMap>`, bypassing redundant job creation and eliminating ~20-40 second loading wait times.
+
+
+
+
 
 
 

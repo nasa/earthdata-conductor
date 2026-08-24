@@ -1,6 +1,8 @@
 import TerraTimeAverageMap from "@nasa-terra/components/dist/react/time-average-map/index.js";
+import { useEffect, useState } from "react";
 import { useToolInfo } from "../helpers.js";
 import type { TimeAveragedMapInput } from "../schemas/time-averaged-map.schema.js";
+import { findMatchingHarmonyJob } from "../utils/harmony-jobs.js";
 import TerraProvider from "./components/TerraProvider.js";
 import "@/index.css";
 
@@ -11,15 +13,48 @@ export default function TimeAveragedMapView() {
 
   const parsedVariable = input.variable?.split("/").pop() || input.variable;
 
+  const [matchedJobId, setMatchedJobId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function checkExistingJobs() {
+      if (!input.collection || !parsedVariable) {
+        return;
+      }
+
+      const existingJobId = await findMatchingHarmonyJob(
+        {
+          requestType: "time-average-map",
+          collection: input.collection,
+          variable: parsedVariable,
+          startDate: input.startDate,
+          endDate: input.endDate,
+          location: input.location,
+        },
+        output?.bearerToken,
+      );
+
+      if (isMounted && existingJobId) {
+        setMatchedJobId(existingJobId);
+      }
+    }
+
+    checkExistingJobs();
+    return () => {
+      isMounted = false;
+    };
+  }, [
+    input.collection,
+    parsedVariable,
+    input.startDate,
+    input.endDate,
+    input.location,
+    output?.bearerToken,
+  ]);
+
   return (
     <TerraProvider>
       <div className="w-full min-h-[450px] flex flex-col gap-2">
-        <div className="flex items-center justify-between px-3 py-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xs">
-          <div className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-            Time-Averaged Map Visualization ({input.collection} -{" "}
-            {parsedVariable})
-          </div>
-        </div>
         {input.collection && parsedVariable ? (
           <TerraTimeAverageMap
             className="w-full h-full"
@@ -29,6 +64,7 @@ export default function TimeAveragedMapView() {
             endDate={input.endDate}
             location={input.location}
             bearerToken={output?.bearerToken}
+            jobId={matchedJobId || undefined}
           />
         ) : (
           <div className="p-12 text-center text-xs text-zinc-400 animate-pulse">

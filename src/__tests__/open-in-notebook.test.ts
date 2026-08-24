@@ -80,4 +80,9 @@ describe("Session History & Open in Notebook Generator", () => {
     });
     expect(outputParsed.stepCount).toBe(2);
   });
+
+  it("should export OpenInNotebook React component correctly", async () => {
+    const OpenInNotebookModule = await import("../views/open-in-notebook.js");
+    expect(typeof OpenInNotebookModule.default).toBe("function");
+  });
 });
